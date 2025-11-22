@@ -8,6 +8,7 @@ declare global {
 		// interface Locals {}
 		interface PageData {
 			pageContent: PageContent;
+			pageId: number;
 		}
 		// interface PageState {}
 		// interface Platform {}

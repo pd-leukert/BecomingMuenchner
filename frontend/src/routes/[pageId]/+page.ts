@@ -3,13 +3,13 @@ import { checkPage, mockPages } from '$lib/pages';
 import { error } from '@sveltejs/kit';
 
 export const load: PageLoad = ({ params: { pageId } }) => {
-	const pageIdStr = Number.parseInt(pageId);
-	if (pageIdStr > mockPages.length) {
+	const pageIdNum = Number.parseInt(pageId);
+	if (pageIdNum > mockPages.length) {
 		error(404);
 	}
-	if (pageIdStr === mockPages.length) {
-		return { pageContent: checkPage };
+	if (pageIdNum === mockPages.length) {
+		return { pageContent: checkPage, pageId: pageIdNum };
 	}
 
-	return { pageContent: mockPages[pageIdStr] };
+	return { pageContent: mockPages[pageIdNum], pageId: pageIdNum };
 };

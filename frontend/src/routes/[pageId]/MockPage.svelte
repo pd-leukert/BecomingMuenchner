@@ -8,7 +8,7 @@
 	const { pageContent }: Props = $props();
 </script>
 
-<h1>{pageContent.header}</h1>
+<h1 class="h1">{pageContent.header}</h1>
 
 {#each pageContent.sections as section}
 	<section>
