@@ -138,42 +138,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/applications/{applicationId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Zurück zur Korrektur (User bricht ab) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    applicationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Status zurückgesetzt, User wird umgeleitet. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/internal/applications/{applicationId}/data": {
         parameters: {
             query?: never;
@@ -306,7 +270,7 @@ export interface components {
              * @description Der globale Status des Antrags
              * @enum {string}
              */
-            status?: "DRAFT" | "VALIDATING" | "READY_TO_SUBMIT" | "SUBMITTED" | "ARCHIVED";
+            status?: "DRAFT" | "VALIDATING" | "READY_TO_SUBMIT" | "READY_TO_SUBMIT_WITH_PROBLEMS" | "SUBMITTED";
             validationReport?: components["schemas"]["ValidationReport"];
             /** @description Rohdaten aus DB (Gehalt, Zertifikate etc.) zur Anzeige */
             submittedData?: {
@@ -360,6 +324,8 @@ export interface components {
             email?: string;
             /** @example Musterstraße 1, 80331 München */
             address?: string;
+            /** @example United Kingdom */
+            nationality?: string;
         };
         ApplicationData: {
             applicationId?: string;
