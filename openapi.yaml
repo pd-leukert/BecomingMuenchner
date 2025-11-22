@@ -228,6 +228,10 @@ components:
         - checkedAt
         - checks
       properties:
+        applicationId:
+          type: string
+          description: "Applicant ID"
+          example: "0123"
         isComplete:
           type: boolean
           description: True, wenn die Cloud Function fertig ist.
@@ -256,6 +260,9 @@ components:
         documentTitle:
           type: string
           example: "Language Certificate"
+        type:
+          type: string
+          example: "salary_slip"          
         checkDisplayTitle:
           type: string
           example: "Validity"
