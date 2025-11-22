@@ -83,8 +83,8 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example Validation started. */
-                            message?: string;
+                            /** @example Validation started */
+                            message: string;
                         };
                     };
                 };
@@ -124,9 +124,9 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            submissionId?: string;
+                            submissionId: string;
                             /** @example SUBMITTED */
-                            status?: string;
+                            status: string;
                         };
                     };
                 };
@@ -263,19 +263,19 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         ApplicationState: {
-            id?: string;
+            id: string;
             /** @example Max Mustermann */
-            applicantName?: string;
-            applicant?: components["schemas"]["ApplicantDetails"];
+            applicantName: string;
+            applicant: components["schemas"]["ApplicantDetails"];
             /**
              * @description Der globale Status des Antrags
              * @enum {string}
              */
-            status?: "DRAFT" | "VALIDATING" | "READY_TO_SUBMIT" | "READY_TO_SUBMIT_WITH_PROBLEMS" | "SUBMITTED";
-            validationReport?: components["schemas"]["ValidationReport"];
+            status: "DRAFT" | "VALIDATING" | "READY_TO_SUBMIT" | "READY_TO_SUBMIT_WITH_PROBLEMS" | "SUBMITTED";
+            validationReport: components["schemas"]["ValidationReport"];
             /** @description Rohdaten aus DB (Gehalt, Zertifikate etc.) zur Anzeige */
-            submittedData?: {
-                uploadedDocuments?: components["schemas"]["DocumentMetadata"][];
+            submittedData: {
+                uploadedDocuments: components["schemas"]["DocumentMetadata"][];
             };
         };
         ValidationReport: {
@@ -283,55 +283,55 @@ export interface components {
              * @description True, wenn die Cloud Function fertig ist.
              * @example true
              */
-            isComplete?: boolean;
+            isComplete: boolean;
             /**
              * @description Ampel-Status für das gesamte Formular.
              * @enum {string}
              */
-            overallResult?: "PENDING" | "SUCCESS" | "WARNING" | "CRITICAL_ERROR";
+            overallResult: "PENDING" | "SUCCESS" | "WARNING" | "CRITICAL_ERROR";
             /** Format: date-time */
-            checkedAt?: string;
-            checks?: components["schemas"]["CheckResult"][];
+            checkedAt: string;
+            checks: components["schemas"]["CheckResult"][];
         };
         CheckResult: {
             /** @example salary_check */
-            checkId?: string;
+            checkId: string;
             /** @example Gehaltsnachweis Prüfung */
-            title?: string;
+            title: string;
             /** @enum {string} */
-            status?: "PASS" | "FAIL" | "WARNING" | "PENDING";
+            status: "PASS" | "FAIL" | "WARNING" | "PENDING";
             /**
              * @description Text für den User, warum es fehlgeschlagen ist.
              * @example Das Einkommen der letzten 3 Monate ist zu gering.
              */
-            message?: string;
+            message: string;
             /** @description Optionaler Pointer auf das Feld, das falsch ist. */
-            affectedField?: string;
+            affectedField: string;
         };
         DocumentMetadata: {
-            docId?: string;
+            docId: string;
             /** @example salary_slip */
-            type?: string;
-            filename?: string;
+            type: string;
+            filename: string;
             /** @description Link zum Anzeigen im Frontend */
-            url?: string;
+            url: string;
         };
         ApplicantDetails: {
             /** @example Max */
-            firstName?: string;
+            firstName: string;
             /** @example Mustermann */
-            lastName?: string;
+            lastName: string;
             /** @example max@example.com */
-            email?: string;
+            email: string;
             /** @example Musterstraße 1, 80331 München */
-            address?: string;
+            address: string;
             /** @example United Kingdom */
-            nationality?: string;
+            nationality: string;
         };
         ApplicationData: {
-            applicationId?: string;
-            applicant?: components["schemas"]["ApplicantDetails"];
-            submittedDocuments?: components["schemas"]["DocumentMetadata"][];
+            applicationId: string;
+            applicant: components["schemas"]["ApplicantDetails"];
+            submittedDocuments: components["schemas"]["DocumentMetadata"][];
         };
     };
     responses: never;

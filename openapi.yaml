@@ -248,17 +248,18 @@ components:
     CheckResult:
       type: object
       required:
-        - documentTitle
-        - checkDisplayTitle
+        - checkId
+        - title
         - status
         - message
+        - affectedField
       properties:
-        documentTitle:
+        checkId:
           type: string
-          example: "Language Certificate"
-        checkDisplayTitle:
+          example: "salary_check"
+        title:
           type: string
-          example: "Validity"
+          example: "Gehaltsnachweis Prüfung"
         status:
           type: string
           enum: [PASS, FAIL, WARNING, PENDING]
@@ -266,6 +267,9 @@ components:
           type: string
           description: Text für den User, warum es fehlgeschlagen ist.
           example: "Das Einkommen der letzten 3 Monate ist zu gering."
+        affectedField:
+          type: string
+          description: Optionaler Pointer auf das Feld, das falsch ist.
     
     # Metadaten zu Dokumenten
     DocumentMetadata:
