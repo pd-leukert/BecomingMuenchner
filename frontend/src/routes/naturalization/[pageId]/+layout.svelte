@@ -11,19 +11,28 @@
 {@render children()}
 <section class="btn-group w-full">
 	{#if pageId > 0}
-		<a class="btn flex w-full" href={resolve(`/naturalization/${pageId - 1}/`)}>
+		<a
+			class="btn flex w-full font-semibold preset-tonal-secondary"
+			href={resolve(`/naturalization/${pageId - 1}/`)}
+		>
 			<ArrowLeft />
 			<span>Zurück</span>
 		</a>
 	{/if}
 	{#if pageId < mockPages.length - 1}
-		<a class="btn flex w-full" href={resolve(`/naturalization/${pageId + 1}/`)}>
+		<a
+			class="btn flex w-full font-semibold preset-tonal-primary"
+			href={resolve(`/naturalization/${pageId + 1}/`)}
+		>
 			<span>Weiter</span>
 			<ArrowRight />
 		</a>
 	{/if}
 	{#if pageId === mockPages.length - 1}
-		<a class="btn flex w-full" href={resolve('/naturalization/check/')}>
+		<a
+			class="btn flex w-full font-semibold preset-tonal-primary"
+			href={resolve('/naturalization/check/')}
+		>
 			<span>Continue with check</span>
 			<ArrowRight />
 		</a>

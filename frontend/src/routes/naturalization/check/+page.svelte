@@ -11,6 +11,7 @@
 	import { resolve } from '$app/paths';
 	import LoadingSpinner from '$lib/LoadingSpinner.svelte';
 	import { scale } from 'svelte/transition';
+	import { RotateCcw, Send, Sparkles, X } from 'lucide-svelte';
 
 	let valRep: ApplicationState['validationReport'] | undefined = $state(undefined);
 	let documentMetadata: ApplicationState['submittedData']['uploadedDocuments'] | undefined =
@@ -74,10 +75,19 @@
 <h1 class="h1">Pre-check of submission</h1>
 
 <section>
-	<p class="p">Check your submission before submitting it.</p>
-	<button type="button" class="btn preset-tonal-primary mx-auto my-4" onclick={startValidation}
-		>{isCheckComplete ? 'Redo' : 'Start'} validation</button
+	<p class="p">Check your documents before submitting them.</p>
+	<button
+		type="button"
+		class="btn preset-tonal-primary mx-auto my-4 font-semibold"
+		onclick={startValidation}
 	>
+		{isCheckComplete ? 'Redo' : 'Start'} validation
+		{#if isCheckComplete}
+			<RotateCcw />
+		{:else}
+			<Sparkles />
+		{/if}
+	</button>
 	{#if timeoutId !== undefined}
 		<button
 			transition:scale
@@ -86,6 +96,7 @@
 			onclick={cancelValidation}
 		>
 			Cancel
+			<X />
 		</button>
 	{/if}
 </section>
@@ -103,7 +114,7 @@
 </section>
 {#if isCheckComplete && timeoutId === undefined}
 	<section transition:scale>
-		<form onsubmit={submitValidation}>
+		<form onsubmit={submitValidation} class="flex flex-col">
 			<h2 class="h2">Submit application</h2>
 			{#if !areAllChecksFine}
 				<div class="p-4 preset-tonal-warning my-4">
@@ -111,7 +122,7 @@
 					correct.
 				</div>
 			{/if}
-			<button type="submit" class="btn preset-tonal-primary ml-auto block">Submit</button>
+			<button type="submit" class="btn preset-tonal-primary ml-auto">Submit <Send /></button>
 		</form>
 	</section>
 {/if}
