@@ -6,6 +6,7 @@ const load: LayoutLoad = () => {
 			header: '',
 			type: 'mock',
 			sections: []
-		}
+		},
+		pageId: 0
 	};
 };

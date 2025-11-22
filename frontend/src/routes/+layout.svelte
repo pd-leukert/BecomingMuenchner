@@ -2,7 +2,7 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { AppBar, Navigation } from '@skeletonlabs/skeleton-svelte';
-	import { Building2, MenuIcon, CircleSmall, Navigation2 } from 'lucide-svelte';
+	import { Building2, MenuIcon, CircleSmall } from 'lucide-svelte';
 	import { page } from '$app/state';
 	import { mockPages } from '$lib/pages';
 
