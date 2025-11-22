@@ -1,35 +1,42 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text
 from .database import Base
+
 
 class Application(Base):
     __tablename__ = "Applications"
 
     id = Column(Integer, primary_key=True, index=True)
-    vorname = Column(String(100), nullable=False)
-    nachname = Column(String(100), nullable=False)
-    geburtsdatum = Column(String(10), nullable=True)
-    adresse = Column(String(200), nullable=True)
-    staatsangehoerigkeit = Column(String(100), nullable=True)
-    Einkommensnachweise = Column(String(100), nullable=True)
-    Mietvertrag = Column(String(100), nullable=True)
-    Aufenthaltstitel1 = Column(String(100), nullable=True)
-    Aufenthaltstitel2 = Column(String(100), nullable=True)
-    Aufenthaltstitel3 = Column(String(100), nullable=True)
-    Pass = Column(String(100), nullable=True)
-    sprachzertifikat = Column(String(100), nullable=True) # speicher die URl 
-    einbürgerungszertifkat = Column(String(100))
-    status = Column(String(100))
+    vorname = Column(String(255), index=True)
+    nachname = Column(String(255), index=True)
+    geburtsdatum = Column(String(50))
+    addresse = Column(String(500))
+    staatsangehoerigkeit = Column(String(100))
+    
+    # WICHTIG: 'Text' statt 'String(2048)' verwenden, um das Row-Size-Limit zu umgehen
+    Einkommensnachweise = Column(Text) 
+    Mietvertrag = Column(Text)
+    Aufenthaltstitel1 = Column(Text)
+    Aufenthaltstitel2 = Column(Text)
+    Aufenthaltstitel3 = Column(Text)
+    Pass = Column(Text)
+    sprachzertifikat = Column(Text)
+    einbürgerungstest = Column(Text)
+    
+    status = Column(String(50))
     result = Column(Boolean, default=False)
-
 
 class Document(Base):
     __tablename__ = "Documents"
-    id = Column(Integer, primary_key=True, index=True) # von Antrag 
-    document_kind = Column(String(100), nullable=False) # z.B. Einkommensnachweis, Mietvertrag
-    criteria = Column(String(100), nullable=False) # welche Anforderungen muss das Dokument erfüllen 
-    url = Column(String(200), nullable=False) # von google storage 
-    result = Column(Boolean) # ob das Dokument den Anforderungen entspricht
-    message = Column(String(200)) # wieso scheiterert das Dokument
+
+    id = Column(Integer, primary_key=True, index=True)
+    application_id = Column(Integer, index=True)
+    document_kind = Column(String(255))
+    criteria = Column(String(255))
+    
+    # Auch hier Text verwenden
+    url = Column(Text) 
+    result = Column(Boolean)
+    message = Column(Text)
 
 
 
