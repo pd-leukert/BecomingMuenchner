@@ -34,7 +34,6 @@ class Document(Base):
     criteria = Column(String(255))
     
     # Auch hier Text verwenden
-    url = Column(Text) 
     result = Column(Boolean)
     message = Column(Text)
 

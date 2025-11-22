@@ -32,7 +32,6 @@ class DocumentScheme(BaseModel):
 
     document_kind: str
     criteria: str
-    url: str
     result: bool
     message: str
 
@@ -104,7 +103,6 @@ def create_document(document: DocumentScheme, db: Session = Depends(get_db)):
         application_id = document.application_id,
         document_kind = document.document_kind,
         criteria = document.criteria,
-        url = document.url,
         result = document.result,
         message = document.message
     )
@@ -188,7 +186,4 @@ def get_documents_by_application(application_id: int, db: Session = Depends(get_
 def get_document_url(blob_name: str) -> str:
     return f"https://storage.googleapis.com/data-pdf-2025/{blob_name}"
 
-@app.get("/list_pdfs", response_model=list[str])
-def list_pdfs():
-    urls = get_pdf_urls()
-    return urls     
+ 
