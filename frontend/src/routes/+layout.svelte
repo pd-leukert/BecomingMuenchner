@@ -4,7 +4,8 @@
 	import { AppBar, Navigation } from '@skeletonlabs/skeleton-svelte';
 	import { Building2, MenuIcon, CircleSmall } from 'lucide-svelte';
 	import { page } from '$app/state';
-	import { mockPages } from '$lib/pages';
+	import { mockPages } from '$lib/mockPages';
+	import { resolve } from '$app/paths';
 
 	let { children } = $props();
 </script>
@@ -31,12 +32,14 @@
 		<Navigation.Group>
 			{@render link('Home', '/')}
 		</Navigation.Group>
-		<Navigation.Group>
-			{#each mockPages as mockPage, i}
-				{@render link(mockPage.header, `/${i}`)}
-			{/each}
-			{@render link('Überprüfung', `/${mockPages.length}`)}
-		</Navigation.Group>
+		{#if page.url.pathname !== '/'}
+			<Navigation.Group>
+				{#each mockPages as mockPage, i (i)}
+					{@render link(mockPage.header, `/naturalization/${i}`)}
+				{/each}
+				{@render link('Überprüfung', '/naturalization/check')}
+			</Navigation.Group>
+		{/if}
 	</Navigation.Content>
 {/snippet}
 
@@ -49,7 +52,7 @@
 <AppBar>
 	<AppBar.Toolbar class="flex flex-row">
 		<AppBar.Lead>
-			<a href="/" class="btn-icon btn-icon-lg hover:preset-tonal"><Building2 /></a>
+			<a href={resolve('/')} class="btn-icon btn-icon-lg hover:preset-tonal"><Building2 /></a>
 		</AppBar.Lead>
 		<AppBar.Headline class="h3 mr-auto">BecomingMünchner</AppBar.Headline>
 		<AppBar.Trail>

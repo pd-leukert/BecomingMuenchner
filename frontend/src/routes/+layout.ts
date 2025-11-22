@@ -1,6 +1,6 @@
 import type { LayoutLoad } from '../../.svelte-kit/types/src/routes/$types';
 
-const load: LayoutLoad = () => {
+export const load: LayoutLoad = () => {
 	return {
 		pageContent: {
 			header: '',
