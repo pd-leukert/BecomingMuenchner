@@ -7,6 +7,7 @@
 		postApplicationsByApplicationIdSubmit
 	} from '$lib/client';
 	import { API_BASE } from '$lib/constants';
+	import CheckResult from '$lib/CheckResult.svelte';
 
 	type Props = {
 		pageContent: CheckPageContent;
@@ -45,7 +46,7 @@
 	<button class="btn" onclick={submitValidation}>Abgeben</button>
 </section>
 <section>
-	{#if valRep !== undefined}
-		{valRep.checks?.[0]?.title}
-	{/if}
+	{#each valRep?.checks ?? [] as checkResult, i (i)}
+		<CheckResult {checkResult} />
+	{/each}
 </section>

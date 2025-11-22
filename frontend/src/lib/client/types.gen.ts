@@ -5,19 +5,19 @@ export type ClientOptions = {
 };
 
 export type ApplicationState = {
-    id?: string;
-    applicantName?: string;
-    applicant?: ApplicantDetails;
+    id: string;
+    applicantName: string;
+    applicant: ApplicantDetails;
     /**
      * Der globale Status des Antrags
      */
-    status?: 'DRAFT' | 'VALIDATING' | 'READY_TO_SUBMIT' | 'READY_TO_SUBMIT_WITH_PROBLEMS' | 'SUBMITTED';
-    validationReport?: ValidationReport;
+    status: 'DRAFT' | 'VALIDATING' | 'READY_TO_SUBMIT' | 'READY_TO_SUBMIT_WITH_PROBLEMS' | 'SUBMITTED';
+    validationReport: ValidationReport;
     /**
      * Rohdaten aus DB (Gehalt, Zertifikate etc.) zur Anzeige
      */
-    submittedData?: {
-        uploadedDocuments?: Array<DocumentMetadata>;
+    submittedData: {
+        uploadedDocuments: Array<DocumentMetadata>;
     };
 };
 
@@ -25,51 +25,51 @@ export type ValidationReport = {
     /**
      * True, wenn die Cloud Function fertig ist.
      */
-    isComplete?: boolean;
+    isComplete: boolean;
     /**
      * Ampel-Status für das gesamte Formular.
      */
-    overallResult?: 'PENDING' | 'SUCCESS' | 'WARNING' | 'CRITICAL_ERROR';
-    checkedAt?: string;
-    checks?: Array<CheckResult>;
+    overallResult: 'PENDING' | 'SUCCESS' | 'WARNING' | 'CRITICAL_ERROR';
+    checkedAt: string;
+    checks: Array<CheckResult>;
 };
 
 export type CheckResult = {
-    checkId?: string;
-    title?: string;
-    status?: 'PASS' | 'FAIL' | 'WARNING' | 'PENDING';
+    checkId: string;
+    title: string;
+    status: 'PASS' | 'FAIL' | 'WARNING' | 'PENDING';
     /**
      * Text für den User, warum es fehlgeschlagen ist.
      */
-    message?: string;
+    message: string;
     /**
      * Optionaler Pointer auf das Feld, das falsch ist.
      */
-    affectedField?: string;
+    affectedField: string;
 };
 
 export type DocumentMetadata = {
-    docId?: string;
-    type?: string;
-    filename?: string;
+    docId: string;
+    type: string;
+    filename: string;
     /**
      * Link zum Anzeigen im Frontend
      */
-    url?: string;
+    url: string;
 };
 
 export type ApplicantDetails = {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    address?: string;
-    nationality?: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    address: string;
+    nationality: string;
 };
 
 export type ApplicationData = {
-    applicationId?: string;
-    applicant?: ApplicantDetails;
-    submittedDocuments?: Array<DocumentMetadata>;
+    applicationId: string;
+    applicant: ApplicantDetails;
+    submittedDocuments: Array<DocumentMetadata>;
 };
 
 export type GetApplicationsByApplicationIdData = {
@@ -111,7 +111,7 @@ export type PostApplicationsByApplicationIdStartValidationResponses = {
      * Prozess gestartet
      */
     202: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -131,8 +131,8 @@ export type PostApplicationsByApplicationIdSubmitResponses = {
      * Erfolgreich eingereicht
      */
     200: {
-        submissionId?: string;
-        status?: string;
+        submissionId: string;
+        status: string;
     };
 };
 
