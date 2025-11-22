@@ -13,6 +13,8 @@
 	import { scale } from 'svelte/transition';
 
 	let valRep: ApplicationState['validationReport'] | undefined = $state(undefined);
+	let documentMetadata: ApplicationState['submittedData']['uploadedDocuments'] | undefined =
+		$state(undefined);
 
 	let timeoutId: undefined | NodeJS.Timeout = $state(undefined);
 
@@ -43,24 +45,29 @@
 		}
 
 		postApplicationsByApplicationIdStartValidation({
-			path: { applicationId: '0' },
+			path: { applicationId: '1' },
 			baseUrl: API_BASE
 		});
 		timeoutId = setInterval(() => {
-			getApplicationsByApplicationId({ path: { applicationId: '0' }, baseUrl: API_BASE }).then(
+			getApplicationsByApplicationId({ path: { applicationId: '1' }, baseUrl: API_BASE }).then(
 				({ data }) => {
 					if (!data) {
 						console.log(':(');
 					}
 					if (data?.status !== 'VALIDATING') {
-						clearInterval(timeoutId);
-						timeoutId = undefined;
+						cancelValidation();
 						isCheckComplete = true;
 					}
 					valRep = data?.validationReport;
+					documentMetadata = data?.submittedData.uploadedDocuments;
 				}
 			);
 		}, 2000);
+	}
+
+	function cancelValidation() {
+		clearInterval(timeoutId);
+		timeoutId = undefined;
 	}
 </script>
 
@@ -71,6 +78,16 @@
 	<button type="button" class="btn preset-tonal-primary mx-auto my-4" onclick={startValidation}
 		>{isCheckComplete ? 'Redo' : 'Start'} validation</button
 	>
+	{#if timeoutId !== undefined}
+		<button
+			transition:scale
+			type="button"
+			class="btn preset-tonal-error"
+			onclick={cancelValidation}
+		>
+			Cancel
+		</button>
+	{/if}
 </section>
 <section class="pb-4">
 	<div class="mx-auto w-fit">
@@ -80,7 +97,7 @@
 	</div>
 	{#if timeoutId === undefined}
 		<div transition:scale>
-			<CheckResults checkResults={valRep?.checks ?? []} />
+			<CheckResults checkResults={valRep?.checks ?? []} documentMetadata={documentMetadata ?? []} />
 		</div>
 	{/if}
 </section>

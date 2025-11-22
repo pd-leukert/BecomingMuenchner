@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CheckResult } from '$lib/client';
+	import type { CheckResult, DocumentMetadata } from '$lib/client';
 	import { Accordion } from '@skeletonlabs/skeleton-svelte';
 	import { ChevronDownIcon } from 'lucide-svelte';
 	import { parseStatus } from '$lib/statusParser';
@@ -7,23 +7,45 @@
 
 	type Props = {
 		checkResults: CheckResult[];
+		documentMetadata: DocumentMetadata[];
 	};
 
-	const { checkResults }: Props = $props();
+	const { checkResults, documentMetadata }: Props = $props();
 
-	const sortedChecks = $derived(sortChecks(checkResults));
+	type ProcessedCheckResult = {
+		documentUrl?: string;
+		checks: Omit<CheckResult, 'documentTitle'>[];
+	};
 
-	function sortChecks(checkResults: CheckResult[]) {
-		return checkResults.reduce(
+	const sortedChecks = $derived(sortChecks(checkResults, documentMetadata));
+
+	function sortChecks(
+		checkResults: CheckResult[],
+		documentMetadata: DocumentMetadata[]
+	): Record<string, ProcessedCheckResult> {
+        console.log(documentMetadata)
+		const intermediateRes = checkResults.reduce(
 			(acc, { documentTitle, ...rest }) => {
 				if (documentTitle in acc) {
-					acc[documentTitle].push(rest);
+					acc[documentTitle].checks.push(rest);
 				} else {
-					acc[documentTitle] = [rest];
+					acc[documentTitle] = {
+						checks: [rest]
+					};
 				}
 				return acc;
 			},
-			{} as Record<string, Omit<CheckResult, 'documentTitle'>[]>
+			{} as Record<string, ProcessedCheckResult>
+		);
+
+		return documentMetadata.reduce(
+			(acc, { url, type }) => {
+				if (type in acc) {
+					acc[type].documentUrl = url;
+				}
+				return acc;
+			},
+			intermediateRes as Record<string, ProcessedCheckResult>
 		);
 	}
 
@@ -35,8 +57,8 @@
 </script>
 
 <Accordion multiple={true} collapsible={true} class="gap-4">
-	{#each Object.entries(sortedChecks) as [documentTitle, checkResults] (documentTitle)}
-		{@const allFine = computeAllFine(checkResults)}
+	{#each Object.entries(sortedChecks) as [documentTitle, { checks, documentUrl }] (documentTitle)}
+		{@const allFine = computeAllFine(checks)}
 		{@const { tailwindString, Icon } = parseStatus(allFine ? 'PASS' : 'FAIL')}
 		<Accordion.Item value={documentTitle}>
 			<h3>
@@ -51,7 +73,7 @@
 				</Accordion.ItemTrigger>
 			</h3>
 			<Accordion.ItemContent class="p-0">
-				<CheckDocumentResults {checkResults} />
+				<CheckDocumentResults {checks} {documentUrl} />
 			</Accordion.ItemContent>
 		</Accordion.Item>
 	{/each}

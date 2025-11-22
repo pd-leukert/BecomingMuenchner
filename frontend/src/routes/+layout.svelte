@@ -75,7 +75,7 @@
 </aside>
 
 <div class="max-w-xl mx-auto">
-	<div class="px-2 py-4">
+	<div class="p-4">
 		{@render children()}
 	</div>
 </div>
