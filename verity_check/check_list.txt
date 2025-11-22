@@ -1,0 +1,61 @@
+1. Identitäts- & Basis-Check (Der "Gatekeeper")
+Die Checks:
+Name Consistency: Fuzzy Match Score > 90% über alle Dokumente (Pass vs. Aufenthaltstitel vs. Mietvertrag).
+Alert: "Namensabweichung erkannt: 'Müller' vs 'Mueller'".
+Geburtsdatum: Muss auf allen Dokumenten identisch sein.
+Pass-Validität: Das Feld valid_until im Pass muss in der Zukunft liegen (2 Monate > today).
+Nationalität: Darf nicht "null","ungeklärt" oder "staatenlos" sein 
+
+2. Aufenthaltsrecht (Der "Permit"-Check)
+Start: Finde den letzten AufenthaltsTitel
+Die Checks:
+
+Titel vorhanden: Ein Dokument vom Typ "Residence Permit" muss im Graphen sein.
+Titel gültig: Das Feld valid_until im Permit muss in der Zukunft liegen (2 Monate > today).
+Erlaubte Paragraphen (Whitelist): Der Graph prüft das Feld paragraph_remarks. Alle ausser:
+❌ Rot (Blocker): § 16a, 16b, 16d, 16e, 16f, 17, 18f, 19, 19b, 19e, 20, 22, 23a, 24, 25 Absatz 3 bis 5 und § 104c
+
+Logik: if extracted_paragraph in last permit ["16b", "16a", "104c"]: alert.
+
+3. Aufenthaltsdauer (Der "Zeitstrahl"-Check)
+
+Die Checks:
+1. Dauer von allen AufenthaltsTiteln zusammen >= 5 Jahre.
+Ehegatten-Regel (§ 9 StAG): Wenn verheiratet mit Deutschem seit 2 Jahren == §28 => Aufenthalt seit 3 Jahren.
+
+2. Unterbrechungen: Max. 6 Monate Abwesenheit am Stück erlaubt. Wie?
+Lücken zwischen Aufenthaltstiteln > 6 Monate sind kritisch (außer Fiktionsbescheinigung überbrückt sie).
+
+4. Lebensunterhalt (Der "Rechner")
+
+Die Checks:
+
+1. Kein Bürgergeld: Prüfe StaatlicheHilfe. Wenn "Bürgergeld" oder "SGB II" → Sofortiger Abbruch. 
+2. Prognose-Rechnung:
+Netto_Einkommen -  Warmmiete (aus Mietvertrag) > Regelsatz (563 €)
+
+5. Sprachkenntnisse (Der "B1"-Check)
+Die Checks:
+
+Min-Level: B1 (oder höher: B2, C1, C2 oder DSH-1, DSH-2, DSH-3).
+
+Anerkannte Zertifikate (Whitelist):
+
+"TELC"
+
+"Goethe-Institut"
+
+"TestDaF"
+
+"ÖSD"
+
+"DSH" (Deutsche Sprachprüfung für den Hochschulzugang)
+
+"DTZ" (Deutsch-Test für Zuwanderer - BAMF)
+
+
+6. Einbürgerungstest (Der "WiD"-Check)
+
+Die Checks:
+Dokument: Zertifikat "Einbürgerungstest" oder "Leben in Deutschland" (LiD).
+Ergebnis: Muss "bestanden" sein (mind. 17 von 33 Punkten).
