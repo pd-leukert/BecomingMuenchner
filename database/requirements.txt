@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pymysql
+python-dotenv
+google-cloud-secret-manager
+cloud-sql-python-connector
+google-cloud-storage
