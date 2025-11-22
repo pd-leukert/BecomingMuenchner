@@ -1,6 +1,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';
+import axios from 'axios';
 
 // 1. IMPORT: Import the huge 'components' object from your generated file
 import type { components } from './src/types.ts';
@@ -18,54 +19,91 @@ app.use(cors());
 app.use(express.json());
 
 const PORT_NUMBER = parseInt(process.env.PORT || '8080', 10);
+const PYTHON_API_URL = 'https://hackatum-db-api-254788991896.europe-west3.run.app';
 
-// --- HACKATHON DATABASE (In-Memory) ---
-// Now the map is type-safe! TypeScript will complain if mock data is wrong.
-const db = new Map<string, ApplicationState>();
-const applicantsDb = new Map<string, ApplicantDetails>();
-
-// Initialize mock data
-db.set("0", {
-    id: "0",
-    applicantName: 'Erika Musterfrau',
-    applicant: {
-        firstName: 'Erika',
-        lastName: 'Musterfrau',
-        email: 'erika.musterfrau@example.com',
-        address: 'Musterstraße 1, 80331 München',
-        nationality: 'Germany'
-    },
-    status: 'DRAFT', // Must be one of the enum values from the YAML!
-    submittedData: {
-        uploadedDocuments: [
-            { docId: 'doc_1', type: 'passport', filename: 'pass.pdf', url: '/files/pass.pdf' },
-            { docId: 'doc_2', type: 'salary_slip', filename: 'gehalt.pdf', url: '/files/gehalt.pdf' }
-        ]
-    },
-    validationReport: {
-        isComplete: false,
-        checks: [] // Initially empty array
+// Helper to map Python Application to Broker ApplicationState
+async function mapPythonAppToBrokerApp(pyApp: any): Promise<ApplicationState> {
+    // Fetch documents
+    let pyDocs: any[] = [];
+    try {
+        const docsRes = await axios.get(`${PYTHON_API_URL}/get_documents_by_application/${pyApp.id}`);
+        pyDocs = docsRes.data;
+    } catch (e) {
+        console.warn(`Could not fetch documents for app ${pyApp.id}`, e);
     }
-});
 
-applicantsDb.set('applicant_1', {
-    firstName: 'Erika',
-    lastName: 'Musterfrau',
-    email: 'erika.musterfrau@example.com',
-    address: 'Musterstraße 1, 80331 München'
-});
+    const uploadedDocuments: DocumentMetadata[] = pyDocs.map((doc: any) => ({
+        docId: doc.id ? doc.id.toString() : 'unknown',
+        type: doc.document_kind,
+        filename: doc.url.split('/').pop() || 'document.pdf',
+        url: doc.url
+    }));
+
+    const checks: CheckResult[] = pyDocs.map((doc: any) => ({
+        checkId: `${doc.document_kind}`,
+        title: `${doc.document_kind} Check`,
+        status: doc.result === true ? 'PASS' : (doc.result === false ? 'FAIL' : 'PENDING'),
+        message: doc.message || '',
+        affectedField: doc.document_kind
+    }));
+
+    // Determine overall result
+    let overallResult: ValidationReport['overallResult'] = 'PENDING';
+    if (pyApp.status === 'VALIDATING') {
+        overallResult = 'PENDING';
+    } else if (checks.some(c => c.status === 'FAIL')) {
+        overallResult = 'CRITICAL_ERROR';
+    } else if (checks.some(c => c.status === 'WARNING')) {
+         overallResult = 'WARNING';
+    } else if (checks.length > 0 && checks.every(c => c.status === 'PASS')) {
+        overallResult = 'SUCCESS';
+    }
+
+    // Map status
+    let status: ApplicationState['status'] = 'DRAFT';
+    const s = pyApp.status;
+    if (s === 'VALIDATING') status = 'VALIDATING';
+    else if (s === 'READY_TO_SUBMIT') status = 'READY_TO_SUBMIT';
+    else if (s === 'READY_TO_SUBMIT_WITH_PROBLEMS') status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
+    else if (s === 'SUBMITTED') status = 'SUBMITTED';
+    else status = 'DRAFT';
+
+    return {
+        id: pyApp.id.toString(),
+        applicantName: `${pyApp.vorname} ${pyApp.nachname}`,
+        applicant: {
+            firstName: pyApp.vorname,
+            lastName: pyApp.nachname,
+            email: 'unknown@example.com',
+            address: pyApp.adresse,
+            nationality: pyApp.staatsangehoerigkeit
+        },
+        status: status,
+        submittedData: {
+            uploadedDocuments
+        },
+        validationReport: {
+            isComplete: status !== 'VALIDATING' && status !== 'DRAFT',
+            overallResult: overallResult,
+            checkedAt: new Date().toISOString(),
+            checks: checks
+        }
+    };
+}
 
 // ------------------------------------------------------
 // 1. GET /applications/{id} - Get status (Polling)
 // ------------------------------------------------------
-app.get('/api/v1/applications/:id', (req: Request, res: Response) => {
-    const appData = db.get(req.params.id);
-
-    if (!appData) {
-        return res.status(404).json({ error: 'Application not found' });
+app.get('/api/v1/applications/:id', async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+        const response = await axios.get(`${PYTHON_API_URL}/getApplications/${id}`);
+        const appData = await mapPythonAppToBrokerApp(response.data);
+        res.json(appData);
+    } catch (error) {
+        console.error('Error fetching application:', error);
+        res.status(404).json({ error: 'Application not found' });
     }
-
-    res.json(appData);
 });
 
 // ------------------------------------------------------
@@ -73,98 +111,90 @@ app.get('/api/v1/applications/:id', (req: Request, res: Response) => {
 // ------------------------------------------------------
 app.post('/api/v1/applications/:id/start-validation', async (req: Request, res: Response) => {
     const id = req.params.id;
-    const appData = db.get(id);
+    try {
+        // 1. Update status in Python API
+        await axios.post(`${PYTHON_API_URL}/update_status_application/${id}?status=VALIDATING`);
 
-    if (!appData) {
-        return res.status(404).json({ error: 'Not found' });
+        // 2. Asynchronously trigger the "Cloud Function"
+        simulateCloudFunction(id);
+
+        res.status(202).json({ message: 'Validation started' });
+    } catch (error) {
+        console.error('Error starting validation:', error);
+        res.status(500).json({ error: 'Could not start validation' });
     }
-
-    // 1. Update status
-    appData.status = 'VALIDATING';
-    appData.validationReport = {
-        isComplete: false,
-        overallResult: 'PENDING',
-        checks: []
-    };
-    db.set(id, appData);
-
-    // 2. Asynchronously trigger the "Cloud Function"
-    simulateCloudFunction(id);
-
-    res.status(202).json({ message: 'Validation started' });
 });
 
 // ------------------------------------------------------
 // 3. POST /internal/... - Callback from FaaS
 // ------------------------------------------------------
-app.post('/api/v1/internal/applications/:id/validation-result', (req: Request, res: Response) => {
+app.post('/api/v1/internal/applications/:id/validation-result', async (req: Request, res: Response) => {
     const id = req.params.id;
-
-    // IMPORTANT: Express doesn't know what's in the body. We must "cast" it.
     const result = req.body as ValidationReport;
 
-    const appData = db.get(id);
-    if (!appData) return res.status(404).send();
+    try {
+        // Update documents based on checks
+        for (const check of result.checks) {
+             const docsRes = await axios.get(`${PYTHON_API_URL}/get_documents_by_application/${id}`);
+             const docs = docsRes.data;
+             const doc = docs.find((d: any) => d.document_kind === check.checkId || d.document_kind === check.title);
 
-    // Save result
-    appData.validationReport = result;
+             if (doc) {
+                 await axios.post(`${PYTHON_API_URL}/update_result_message_document/${id}/${doc.document_kind}/${doc.criteria}?result=${check.status === 'PASS'}&message=${encodeURIComponent(check.message)}`);
+             }
+        }
 
-    // Derive global status
-    if (result.overallResult === 'CRITICAL_ERROR') {
-        // Logic: On error it stays visible, or status changes
-        // We leave it on VALIDATING here or set it to an error status,
-        // but according to Enum there is no explicit ERROR status for the application, only in the report.
-        // Maybe reset to DRAFT?
-    } else if (result.overallResult === 'WARNING') {
-        appData.status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
-    } else {
-        appData.status = 'READY_TO_SUBMIT';
+        // Update status
+        let status = 'READY_TO_SUBMIT';
+        if (result.overallResult === 'WARNING') {
+            status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
+        } else if (result.overallResult === 'CRITICAL_ERROR') {
+            // status = 'DRAFT'; // ?
+        }
+        
+        await axios.post(`${PYTHON_API_URL}/update_status_application/${id}?status=${status}`);
+        
+        console.log(`[Broker] Result received for ${id}.`);
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error processing validation result:', error);
+        res.status(500).send();
     }
-
-    db.set(id, appData);
-    console.log(`[Broker] Result received for ${id}.`);
-
-    res.sendStatus(200);
 });
 
 // ------------------------------------------------------
 // 4. Submit / Reject
 // ------------------------------------------------------
-app.post('/api/v1/applications/:id/submit', (req: Request, res: Response) => {
-    const appData = db.get(req.params.id);
-    if (appData) {
-        appData.status = 'SUBMITTED';
+app.post('/api/v1/applications/:id/submit', async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+        await axios.post(`${PYTHON_API_URL}/update_status_application/${id}?status=SUBMITTED`);
         res.json({ status: 'SUBMITTED', submissionId: 'sub_999' });
-    } else {
-        res.status(404).send();
+    } catch (error) {
+        console.error('Error submitting application:', error);
+        res.status(500).send();
     }
 });
 
 // ------------------------------------------------------
 // 5. Internal: Get data for validation
 // ------------------------------------------------------
-app.get('/api/v1/internal/applications/:applicationId/data', (req: Request, res: Response) => {
+app.get('/api/v1/internal/applications/:applicationId/data', async (req: Request, res: Response) => {
     const appId = req.params.applicationId;
-    const appData = db.get(appId);
+    try {
+        const response = await axios.get(`${PYTHON_API_URL}/getApplications/${appId}`);
+        const appState = await mapPythonAppToBrokerApp(response.data);
 
-    if (!appData) {
-        return res.status(404).json({ error: 'Application not found' });
+        const internalData: ApplicationData = {
+            applicationId: appId,
+            applicant: appState.applicant,
+            submittedDocuments: appState.submittedData.uploadedDocuments
+        };
+
+        res.json(internalData);
+    } catch (error) {
+        res.status(404).json({ error: 'Application not found' });
     }
-
-    // We assemble the ApplicationData object
-    // In a real app we would find the Applicant based on an ID in the ApplicationState
-    // const applicant = applicantsDb.get('applicant_1'); // Hardcoded for Demo
-    
-    // If we have the Applicant in the state, we take it from there, otherwise fallback
-    const applicant = appData.applicant || applicantsDb.get('applicant_1');
-
-    const internalData: ApplicationData = {
-        applicationId: appId,
-        applicant: applicant,
-        submittedDocuments: appData.submittedData?.uploadedDocuments
-    };
-
-    res.json(internalData);
 });
 
 // ------------------------------------------------------
@@ -181,47 +211,37 @@ app.get('/api/v1/internal/documents/:documentId', (req: Request, res: Response) 
 
 
 // --- SIMULATION OF CLOUD FUNCTION (Mock) ---
-function simulateCloudFunction(appId: string) {
+async function simulateCloudFunction(appId: string) {
     console.log(`[MockFaaS] Starting check for ${appId}...`);
 
-    setTimeout(() => {
-        // Create type-safe mock object
-        const mockResult: ValidationReport = {
-            isComplete: true,
-            checkedAt: new Date().toISOString(),
-            overallResult: 'WARNING',
-            checks: [
-                {
-                    checkId: 'salary',
-                    title: 'Salary Check',
-                    status: 'PASS',
-                    message: 'Salary is sufficient.'
-                },
-                {
-                    checkId: 'language',
-                    title: 'Language Certificate B2',
-                    status: 'WARNING',
-                    message: 'Certificate is older than 2 years, please check manually.',
-                    affectedField: 'documents.cert_b2'
-                }
-            ]
-        };
+    setTimeout(async () => {
+        try {
+            // Fetch documents to validate
+            const docsRes = await axios.get(`${PYTHON_API_URL}/get_documents_by_application/${appId}`);
+            const docs = docsRes.data;
 
-        // Direct DB Update for Demo purposes:
-        const appData = db.get(appId);
-        if (appData) {
-            appData.validationReport = mockResult;
-            if (mockResult.overallResult === 'WARNING') {
-                appData.status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
-            } else {
-                appData.status = 'READY_TO_SUBMIT';
+            let hasWarning = false;
+
+            for (const doc of docs) {
+                // Mock logic: Randomly pass or warn
+                const isPass = Math.random() > 0.3;
+                const message = isPass ? 'Document looks good.' : 'Document needs review.';
+                
+                if (!isPass) hasWarning = true;
+
+                await axios.post(`${PYTHON_API_URL}/update_result_message_document/${appId}/${doc.document_kind}/${doc.criteria}?result=${isPass}&message=${encodeURIComponent(message)}`);
             }
+
+            const newStatus = hasWarning ? 'READY_TO_SUBMIT_WITH_PROBLEMS' : 'READY_TO_SUBMIT';
+            await axios.post(`${PYTHON_API_URL}/update_status_application/${appId}?status=${newStatus}`);
+
             console.log(`[MockFaaS] Finished. Data saved.`);
+        } catch (e) {
+            console.error('[MockFaaS] Error during simulation:', e);
         }
     }, 3000);
 }
 
 app.listen(PORT_NUMBER, '0.0.0.0', () => {
     console.log(`Broker running on port ${PORT_NUMBER}`);
-    console.log(`Test-ID: 0`);
 });
