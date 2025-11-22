@@ -44,6 +44,8 @@ db.set("0", {
     },
     validationReport: {
         isComplete: false,
+        overallResult: 'PENDING',
+        checkedAt: new Date().toISOString(),
         checks: [] // Initially empty array
     }
 });
@@ -52,7 +54,8 @@ applicantsDb.set('applicant_1', {
     firstName: 'Erika',
     lastName: 'Musterfrau',
     email: 'erika.musterfrau@example.com',
-    address: 'Musterstraße 1, 80331 München'
+    address: 'Musterstraße 1, 80331 München',
+    nationality: 'Germany'
 });
 
 // ------------------------------------------------------
@@ -84,6 +87,7 @@ app.post('/api/v1/applications/:id/start-validation', async (req: Request, res: 
     appData.validationReport = {
         isComplete: false,
         overallResult: 'PENDING',
+        checkedAt: new Date().toISOString(),
         checks: []
     };
     db.set(id, appData);
@@ -192,17 +196,18 @@ function simulateCloudFunction(appId: string) {
             overallResult: 'WARNING',
             checks: [
                 {
-                    checkId: 'salary',
-                    title: 'Salary Check',
+                    documentTitle: 'Salary Slip',
+                    type: 'salary_slip',
+                    checkDisplayTitle: 'Salary Check',
                     status: 'PASS',
                     message: 'Salary is sufficient.'
                 },
                 {
-                    checkId: 'language',
-                    title: 'Language Certificate B2',
-                    status: 'WARNING',
-                    message: 'Certificate is older than 2 years, please check manually.',
-                    affectedField: 'documents.cert_b2'
+                    documentTitle: 'Language Certificate B2',
+                    type: 'certificate',
+                    checkDisplayTitle: 'Validity Check',
+                    status: 'FAIL',
+                    message: 'Certificate is older than 2 years, please check manually.'
                 }
             ]
         };
