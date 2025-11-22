@@ -4,14 +4,26 @@ from .database import Base, engine, get_db
 from .datamodel import Person
 from pydantic import BaseModel
 from .tools import get_pdf_urls, upload_pdf
+from contextlib import asynccontextmanager
+import logging
 
-# Tabellen erstellen (nur einmal beim Start; in Produktion besser Migrations-Tool nutzen)
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger("uvicorn")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        # Tabellen erstellen (nur einmal beim Start; in Produktion besser Migrations-Tool nutzen)
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully.")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+    yield
 
 app = FastAPI(
     title="Kunden API",
     description="API zum Verwalten von Kundendaten",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Pydantic Schemas

@@ -4,5 +4,5 @@ sqlalchemy
 pymysql
 python-dotenv
 google-cloud-secret-manager
-google_cloud-sql-python-connector
+cloud-sql-python-connector
 google-cloud-storage
