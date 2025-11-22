@@ -4,7 +4,7 @@ import json
 import sys
 
 async def test_api():
-    base_url = "http://localhost:8001"
+    base_url = "http://35.184.144.165:8001"
     
     print(f"🔍 Testing API at {base_url}...")
     

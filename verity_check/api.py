@@ -110,7 +110,7 @@ async def run_verification_check(request: CheckRequest):
                         {
                             "type": "passport",
                             "filename": "passport.jpg",
-                            "local_source": "/home/holmov/BecomingMuenchner/verity_check/test/dummy_doc.jpg"
+                            "local_source": "/home/holmov/BecomingMuenchner/verity_check/tests/dummy_doc.jpg"
                         }
                     ]
                 }
