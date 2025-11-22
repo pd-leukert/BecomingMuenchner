@@ -18,57 +18,131 @@ app.use(cors());
 app.use(express.json());
 
 const PORT_NUMBER = parseInt(process.env.PORT || '8080', 10);
+const API_BASE_URL = 'https://hackatum-db-api-254788991896.europe-west3.run.app';
 
-// --- HACKATHON DATABASE (In-Memory) ---
-// Now the map is type-safe! TypeScript will complain if mock data is wrong.
-const db = new Map<string, ApplicationState>();
-const applicantsDb = new Map<string, ApplicantDetails>();
+const DOC_FIELD_MAPPING = [
+    { key: 'Einkommensnachweise', type: 'salary_slip' },
+    { key: 'Mietvertrag', type: 'rent_contract' },
+    { key: 'Aufenthaltstitel1', type: 'residence_permit_1' },
+    { key: 'Aufenthaltstitel2', type: 'residence_permit_2' },
+    { key: 'Aufenthaltstitel3', type: 'residence_permit_3' },
+    { key: 'Pass', type: 'passport' },
+    { key: 'sprachzertifikat', type: 'language_certificate' },
+    { key: 'einbürgerungstest', type: 'naturalization_test' }
+];
 
-// Initialize mock data
-db.set("0", {
-    id: "0",
-    applicantName: 'Erika Musterfrau',
-    applicant: {
-        firstName: 'Erika',
-        lastName: 'Musterfrau',
-        email: 'erika.musterfrau@example.com',
-        address: 'Musterstraße 1, 80331 München',
-        nationality: 'Germany'
-    },
-    status: 'DRAFT', // Must be one of the enum values from the YAML!
-    submittedData: {
-        uploadedDocuments: [
-            { docId: 'doc_1', type: 'passport', filename: 'pass.pdf', url: '/files/pass.pdf' },
-            { docId: 'doc_2', type: 'salary_slip', filename: 'gehalt.pdf', url: '/files/gehalt.pdf' }
-        ]
-    },
-    validationReport: {
-        isComplete: false,
-        overallResult: 'PENDING',
-        checkedAt: new Date().toISOString(),
-        checks: [] // Initially empty array
+// Helper to fetch application from Python API
+async function fetchApplication(id: string) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/getApplications/${id}`);
+        if (!res.ok) {
+            console.error(`Failed to fetch application ${id}: ${res.status} ${res.statusText}`);
+            return null;
+        }
+        return await res.json();
+    } catch (error) {
+        console.error(`Error fetching application ${id}:`, error);
+        return null;
     }
-});
+}
 
-applicantsDb.set('applicant_1', {
-    firstName: 'Erika',
-    lastName: 'Musterfrau',
-    email: 'erika.musterfrau@example.com',
-    address: 'Musterstraße 1, 80331 München',
-    nationality: 'Germany'
-});
+// Helper to fetch documents from Python API
+async function fetchDocuments(id: string) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/get_documents_by_application/${id}`);
+        if (!res.ok) {
+             // It might return 404 if no documents exist yet, which is fine
+            return [];
+        }
+        return await res.json();
+    } catch (error) {
+        console.error(`Error fetching documents for ${id}:`, error);
+        return [];
+    }
+}
+
+// Helper to map Python API data to ApplicationState
+async function mapToApplicationState(appData: any, docs: any[]): Promise<ApplicationState> {
+    const uploadedDocuments: DocumentMetadata[] = [];
+    DOC_FIELD_MAPPING.forEach(field => {
+        if (appData[field.key]) {
+            uploadedDocuments.push({
+                docId: field.key, // Use field key as ID for simplicity
+                type: field.type,
+                filename: appData[field.key].split('/').pop() || field.key,
+                url: `/api/v1/internal/documents/${appData.id}/${field.type}`
+            });
+        }
+    });
+
+    const checks: CheckResult[] = docs.map((d: any) => ({
+        documentTitle: d.document_kind,
+        type: d.document_kind,
+        checkDisplayTitle: d.criteria,
+        status: d.result ? 'PASS' : 'FAIL',
+        message: d.message
+    }));
+
+    // Map status string to Enum
+    let status: ApplicationState['status'] = 'DRAFT';
+    if (['DRAFT', 'VALIDATING', 'READY_TO_SUBMIT', 'READY_TO_SUBMIT_WITH_PROBLEMS', 'SUBMITTED'].includes(appData.status)) {
+        status = appData.status as ApplicationState['status'];
+    } else {
+        // Fallback mapping if Python API uses different strings
+        if (appData.status === 'PENDING') status = 'VALIDATING';
+        // Add more mappings if needed
+    }
+
+    // Determine overallResult based on status and result
+    let overallResult: ValidationReport['overallResult'] = 'PENDING';
+    if (status === 'DRAFT' || status === 'VALIDATING') {
+        overallResult = 'PENDING';
+    } else if (status === 'READY_TO_SUBMIT_WITH_PROBLEMS') {
+        overallResult = 'WARNING';
+    } else if (!appData.result) {
+        overallResult = 'CRITICAL_ERROR';
+    } else {
+        overallResult = 'SUCCESS';
+    }
+
+    return {
+        id: appData.id.toString(),
+        applicantName: `${appData.vorname} ${appData.nachname}`,
+        applicant: {
+            firstName: appData.vorname,
+            lastName: appData.nachname,
+            email: 'unknown@example.com', // Not in Python API
+            address: appData.addresse,
+            nationality: appData.staatsangehoerigkeit
+        },
+        status: status,
+        submittedData: {
+            uploadedDocuments
+        },
+        validationReport: {
+            isComplete: status !== 'DRAFT' && status !== 'VALIDATING',
+            overallResult: overallResult,
+            checkedAt: new Date().toISOString(), // Not in API
+            checks
+        }
+    };
+}
 
 // ------------------------------------------------------
 // 1. GET /applications/{id} - Get status (Polling)
 // ------------------------------------------------------
-app.get('/api/v1/applications/:id', (req: Request, res: Response) => {
-    const appData = db.get(req.params.id);
+app.get('/api/v1/applications/:id', async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const appData = await fetchApplication(id);
 
     if (!appData) {
         return res.status(404).json({ error: 'Application not found' });
     }
 
-    res.json(appData);
+    const docs = await fetchDocuments(id);
+    const state = await mapToApplicationState(appData, docs);
+
+    res.json(state);
 });
 
 // ------------------------------------------------------
@@ -76,21 +150,16 @@ app.get('/api/v1/applications/:id', (req: Request, res: Response) => {
 // ------------------------------------------------------
 app.post('/api/v1/applications/:id/start-validation', async (req: Request, res: Response) => {
     const id = req.params.id;
-    const appData = db.get(id);
+    const appData = await fetchApplication(id);
 
     if (!appData) {
         return res.status(404).json({ error: 'Not found' });
     }
 
-    // 1. Update status
-    appData.status = 'VALIDATING';
-    appData.validationReport = {
-        isComplete: false,
-        overallResult: 'PENDING',
-        checkedAt: new Date().toISOString(),
-        checks: []
-    };
-    db.set(id, appData);
+    // 1. Update status in Python API
+    await fetch(`${API_BASE_URL}/update_status_application/${id}?status=VALIDATING`, {
+        method: 'POST'
+    });
 
     // 2. Asynchronously trigger the "Cloud Function"
     simulateCloudFunction(id);
@@ -101,43 +170,80 @@ app.post('/api/v1/applications/:id/start-validation', async (req: Request, res: 
 // ------------------------------------------------------
 // 3. POST /internal/... - Callback from FaaS
 // ------------------------------------------------------
-app.post('/api/v1/internal/applications/:id/validation-result', (req: Request, res: Response) => {
+app.post('/api/v1/internal/applications/:id/validation-result', async (req: Request, res: Response) => {
     const id = req.params.id;
 
     // IMPORTANT: Express doesn't know what's in the body. We must "cast" it.
     const result = req.body as ValidationReport;
 
-    const appData = db.get(id);
-    if (!appData) return res.status(404).send();
+    // Update Python API with results
+    // 1. Update overall result/status
+    let newStatus = 'READY_TO_SUBMIT';
+    let overallResult = true;
 
-    // Save result
-    appData.validationReport = result;
-
-    // Derive global status
     if (result.overallResult === 'CRITICAL_ERROR') {
-        // Logic: On error it stays visible, or status changes
-        // We leave it on VALIDATING here or set it to an error status,
-        // but according to Enum there is no explicit ERROR status for the application, only in the report.
-        // Maybe reset to DRAFT?
+        // Handle error
+        overallResult = false;
     } else if (result.overallResult === 'WARNING') {
-        appData.status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
+        newStatus = 'READY_TO_SUBMIT_WITH_PROBLEMS';
+        overallResult = true; // Or false? "result" in Python API seems to be boolean. Let's assume true means "passed enough to proceed"
     } else {
-        appData.status = 'READY_TO_SUBMIT';
+        newStatus = 'READY_TO_SUBMIT';
+        overallResult = true;
     }
 
-    db.set(id, appData);
-    console.log(`[Broker] Result received for ${id}.`);
+    await fetch(`${API_BASE_URL}/update_status_application/${id}?status=${newStatus}`, { method: 'POST' });
+    await fetch(`${API_BASE_URL}/update_result_application/${id}?result=${overallResult}`, { method: 'POST' });
 
+    // 2. Update documents
+    for (const check of result.checks) {
+        // We need to map check to document criteria
+        // Python API: update_result_message_document/{application_id}/{document_kind}/{criteria}
+        // check.type -> document_kind
+        // check.checkDisplayTitle -> criteria
+        
+        // Note: Python API might expect specific strings.
+        // If the document doesn't exist, we might need to create it first?
+        // The Python API has create_document.
+        // Let's try to update, if it fails (404), create it.
+        
+        const kind = check.type || 'unknown';
+        const criteria = check.checkDisplayTitle;
+        const checkResult = check.status === 'PASS';
+        const message = check.message;
+
+        const updateUrl = `${API_BASE_URL}/update_result_message_document/${id}/${kind}/${criteria}?result=${checkResult}&message=${encodeURIComponent(message)}`;
+        const updateRes = await fetch(updateUrl, { method: 'POST' });
+
+        if (!updateRes.ok) {
+            // Try creating it
+            await fetch(`${API_BASE_URL}/Documents`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    application_id: parseInt(id),
+                    document_kind: kind,
+                    criteria: criteria,
+                    result: checkResult,
+                    message: message
+                })
+            });
+        }
+    }
+
+    console.log(`[Broker] Result received and saved for ${id}.`);
     res.sendStatus(200);
 });
 
 // ------------------------------------------------------
 // 4. Submit / Reject
 // ------------------------------------------------------
-app.post('/api/v1/applications/:id/submit', (req: Request, res: Response) => {
-    const appData = db.get(req.params.id);
+app.post('/api/v1/applications/:id/submit', async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const appData = await fetchApplication(id);
+    
     if (appData) {
-        appData.status = 'SUBMITTED';
+        await fetch(`${API_BASE_URL}/update_status_application/${id}?status=SUBMITTED`, { method: 'POST' });
         res.json({ status: 'SUBMITTED', submissionId: 'sub_999' });
     } else {
         res.status(404).send();
@@ -147,25 +253,21 @@ app.post('/api/v1/applications/:id/submit', (req: Request, res: Response) => {
 // ------------------------------------------------------
 // 5. Internal: Get data for validation
 // ------------------------------------------------------
-app.get('/api/v1/internal/applications/:applicationId/data', (req: Request, res: Response) => {
+app.get('/api/v1/internal/applications/:applicationId/data', async (req: Request, res: Response) => {
     const appId = req.params.applicationId;
-    const appData = db.get(appId);
+    const appData = await fetchApplication(appId);
 
     if (!appData) {
         return res.status(404).json({ error: 'Application not found' });
     }
 
-    // We assemble the ApplicationData object
-    // In a real app we would find the Applicant based on an ID in the ApplicationState
-    // const applicant = applicantsDb.get('applicant_1'); // Hardcoded for Demo
-    
-    // If we have the Applicant in the state, we take it from there, otherwise fallback
-    const applicant = appData.applicant || applicantsDb.get('applicant_1');
+    const docs = await fetchDocuments(appId);
+    const state = await mapToApplicationState(appData, docs);
 
     const internalData: ApplicationData = {
         applicationId: appId,
-        applicant: applicant,
-        submittedDocuments: appData.submittedData?.uploadedDocuments
+        applicant: state.applicant,
+        submittedDocuments: state.submittedData.uploadedDocuments
     };
 
     res.json(internalData);
@@ -174,13 +276,39 @@ app.get('/api/v1/internal/applications/:applicationId/data', (req: Request, res:
 // ------------------------------------------------------
 // 7. Internal: Get document
 // ------------------------------------------------------
-app.get('/api/v1/internal/documents/:documentId', (req: Request, res: Response) => {
-    const docId = req.params.documentId;
-    // Mock: We simply always return success, content doesn't matter for the broker here
-    // In reality one would pipe the file stream from S3/Disk.
-    console.log(`[Broker] Serving document ${docId}`);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send('PDF-CONTENT-MOCK'); 
+app.get('/api/v1/internal/documents/:applicationId/:type', async (req: Request, res: Response) => {
+    const { applicationId, type } = req.params;
+    
+    const mapping = DOC_FIELD_MAPPING.find(m => m.type === type);
+    if (!mapping) {
+        return res.status(400).json({ error: `Unknown document type: ${type}` });
+    }
+
+    const appData = await fetchApplication(applicationId);
+    if (!appData) {
+        return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const fileUrl = appData[mapping.key];
+    if (!fileUrl) {
+        return res.status(404).json({ error: 'Document not found' });
+    }
+
+    try {
+        const fileRes = await fetch(fileUrl);
+        if (!fileRes.ok) {
+            return res.status(502).json({ error: 'Failed to fetch document from storage' });
+        }
+        
+        const contentType = fileRes.headers.get('content-type');
+        if (contentType) res.setHeader('Content-Type', contentType);
+        
+        const arrayBuffer = await fileRes.arrayBuffer();
+        res.send(Buffer.from(arrayBuffer));
+    } catch (error) {
+        console.error(`Error fetching document ${applicationId}/${type}:`, error);
+        res.status(500).send();
+    }
 });
 
 
@@ -188,7 +316,7 @@ app.get('/api/v1/internal/documents/:documentId', (req: Request, res: Response) 
 function simulateCloudFunction(appId: string) {
     console.log(`[MockFaaS] Starting check for ${appId}...`);
 
-    setTimeout(() => {
+    setTimeout(async () => {
         // Create type-safe mock object
         const mockResult: ValidationReport = {
             isComplete: true,
@@ -204,7 +332,7 @@ function simulateCloudFunction(appId: string) {
                 },
                 {
                     documentTitle: 'Language Certificate B2',
-                    type: 'certificate',
+                    type: 'language_certificate',
                     checkDisplayTitle: 'Validity Check',
                     status: 'FAIL',
                     message: 'Certificate is older than 2 years, please check manually.'
@@ -212,21 +340,27 @@ function simulateCloudFunction(appId: string) {
             ]
         };
 
-        // Direct DB Update for Demo purposes:
-        const appData = db.get(appId);
-        if (appData) {
-            appData.validationReport = mockResult;
-            if (mockResult.overallResult === 'WARNING') {
-                appData.status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
+        // Call the callback endpoint (which is on THIS server)
+        try {
+            const res = await fetch(`http://localhost:${PORT_NUMBER}/api/v1/internal/applications/${appId}/validation-result`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(mockResult)
+            });
+            
+            if (res.ok) {
+                console.log(`[MockFaaS] Finished. Result sent to broker.`);
             } else {
-                appData.status = 'READY_TO_SUBMIT';
+                console.error(`[MockFaaS] Failed to send result: ${res.status}`);
             }
-            console.log(`[MockFaaS] Finished. Data saved.`);
+        } catch (e) {
+            console.error("[MockFaaS] Error calling broker:", e);
         }
+
     }, 3000);
 }
 
 app.listen(PORT_NUMBER, '0.0.0.0', () => {
     console.log(`Broker running on port ${PORT_NUMBER}`);
-    console.log(`Test-ID: 0`);
+    console.log(`Connected to Python API at ${API_BASE_URL}`);
 });

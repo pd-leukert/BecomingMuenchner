@@ -176,7 +176,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/internal/documents/{documentId}": {
+    "/internal/documents/{applicationId}/{type}": {
         parameters: {
             query?: never;
             header?: never;
@@ -189,7 +189,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    documentId: string;
+                    applicationId: string;
+                    type: string;
                 };
                 cookie?: never;
             };
