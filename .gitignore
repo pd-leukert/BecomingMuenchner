@@ -211,3 +211,7 @@ node_modules/
 # ide stuff
 .idea
 .vscode
+
+*/__pycache__
+*/lib
+verity_check/dir
