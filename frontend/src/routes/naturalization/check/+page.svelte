@@ -56,11 +56,11 @@
 	<button type="button" class="btn" onclick={startValidation}>Validierung starten</button>
 </section>
 <section>
-    <div class="mx-auto w-fit">
-        {#if timeoutId !== undefined}
-            <LoadingSpinner />
-        {/if}
-    </div>
+	<div class="mx-auto w-fit">
+		{#if timeoutId !== undefined}
+			<LoadingSpinner />
+		{/if}
+	</div>
 	{#each valRep?.checks ?? [] as checkResult, i (i)}
 		<CheckResult {checkResult} />
 	{/each}
