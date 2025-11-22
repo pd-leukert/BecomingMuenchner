@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean
 from .database import Base
 
-class Person(Base):
-    __tablename__ = "Personen"
+class Application(Base):
+    __tablename__ = "Applications"
 
     id = Column(Integer, primary_key=True, index=True)
     vorname = Column(String(100), nullable=False)
@@ -22,13 +22,14 @@ class Person(Base):
     result = Column(Boolean, default=False)
 
 
-class Dokument(Base):
-    __tablename__ = "Dokumente"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    url = Column(String(200), nullable=False)
-    result = Column(Boolean)
+class Document(Base):
+    __tablename__ = "Documents"
+    id = Column(Integer, primary_key=True, index=True) # von Antrag 
+    document_kind = Column(String(100), nullable=False) # z.B. Einkommensnachweis, Mietvertrag
+    criteria = Column(String(100), nullable=False) # welche Anforderungen muss das Dokument erfüllen 
+    url = Column(String(200), nullable=False) # von google storage 
+    result = Column(Boolean) # ob das Dokument den Anforderungen entspricht
+    message = Column(String(200)) # wieso scheiterert das Dokument
 
 
 

@@ -67,6 +67,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -93,6 +95,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - submissionId
+                  - status
                 properties:
                   submissionId:
                     type: string
@@ -177,6 +182,13 @@ components:
     # Das Hauptobjekt für das Frontend
     ApplicationState:
       type: object
+      required:
+        - id
+        - applicantName
+        - applicant
+        - status
+        - validationReport
+        - submittedData
       properties:
         id:
           type: string
@@ -199,6 +211,8 @@ components:
         submittedData:
           type: object
           description: Rohdaten aus DB (Gehalt, Zertifikate etc.) zur Anzeige
+          required:
+            - uploadedDocuments
           properties:
             uploadedDocuments:
               type: array
@@ -208,6 +222,11 @@ components:
     # Die Liste aller Prüfungen
     ValidationReport:
       type: object
+      required:
+        - isComplete
+        - overallResult
+        - checkedAt
+        - checks
       properties:
         isComplete:
           type: boolean
@@ -228,6 +247,12 @@ components:
     # Ein einzelnes Prüfergebnis (z.B. "Gehaltscheck")
     CheckResult:
       type: object
+      required:
+        - checkId
+        - title
+        - status
+        - message
+        - affectedField
       properties:
         checkId:
           type: string
@@ -249,6 +274,11 @@ components:
     # Metadaten zu Dokumenten
     DocumentMetadata:
       type: object
+      required:
+        - docId
+        - type
+        - filename
+        - url
       properties:
         docId:
           type: string
@@ -263,6 +293,12 @@ components:
 
     ApplicantDetails:
       type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - address
+        - nationality
       properties:
         firstName:
           type: string
@@ -282,6 +318,10 @@ components:
 
     ApplicationData:
       type: object
+      required:
+        - applicationId
+        - applicant
+        - submittedDocuments
       properties:
         applicationId:
           type: string
