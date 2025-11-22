@@ -7,13 +7,20 @@
 	} from '$lib/client';
 	import { API_BASE } from '$lib/constants';
 	import CheckResult from '$lib/CheckResult.svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import LoadingSpinner from '$lib/LoadingSpinner.svelte';
 
 	let valRep: ApplicationState['validationReport'] | undefined = $state(undefined);
 
-	let timeoutId: undefined | NodeJS.Timeout = undefined;
+	let timeoutId: undefined | NodeJS.Timeout = $state(undefined);
 
-	function submitValidation() {
-		postApplicationsByApplicationIdSubmit({ path: { applicationId: '0' }, baseUrl: API_BASE });
+	async function submitValidation() {
+		await postApplicationsByApplicationIdSubmit({
+			path: { applicationId: '0' },
+			baseUrl: API_BASE
+		});
+		goto(resolve('/success'));
 	}
 
 	function startValidation() {
@@ -33,6 +40,7 @@
 					}
 					if (data?.status !== 'VALIDATING') {
 						clearInterval(timeoutId);
+						timeoutId = undefined;
 					}
 					valRep = data?.validationReport;
 				}
@@ -45,11 +53,19 @@
 
 <section>
 	<p class="p">Lasse deine Angaben überprüfen, bevor du sie endgültig einreichst.</p>
-	<button class="btn" onclick={startValidation}>Validierung starten</button>
-	<button class="btn" onclick={submitValidation}>Abgeben</button>
+	<button type="button" class="btn" onclick={startValidation}>Validierung starten</button>
 </section>
 <section>
+	{#if timeoutId !== undefined}
+		<LoadingSpinner />
+	{/if}
 	{#each valRep?.checks ?? [] as checkResult, i (i)}
 		<CheckResult {checkResult} />
 	{/each}
+</section>
+<section>
+	<form onsubmit={submitValidation}>
+		<h2 class="h2">Submit application</h2>
+		<button type="submit" class="btn preset-tonal-primary">Submit</button>
+	</form>
 </section>
