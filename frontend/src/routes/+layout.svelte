@@ -1,8 +1,8 @@
 <script lang="ts">
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { AppBar } from '@skeletonlabs/skeleton-svelte';
-	import { Building2, MenuIcon, CircleSmall } from 'lucide-svelte';
+	import { AppBar, Navigation } from '@skeletonlabs/skeleton-svelte';
+	import { Building2, MenuIcon, CircleSmall, Navigation2 } from 'lucide-svelte';
 	import { page } from '$app/state';
 	import { mockPages } from '$lib/pages';
 
@@ -14,31 +14,36 @@
 </svelte:head>
 
 {#snippet link(name: string, url: string)}
-	<li>
-		<a class="flex flex-row hover:*:first:block" href={url}>
-			{#if url === page.url.href}
+	<Navigation.Menu>
+		<a class="flex flex-row hover:*:first:visible w-full py-2" href={url}>
+			{#if url === page.url.pathname}
 				<CircleSmall />
 			{:else}
-				<CircleSmall class="hidden" />
+				<CircleSmall class="invisible" />
 			{/if}
+			{name}
 		</a>
-	</li>
+	</Navigation.Menu>
 {/snippet}
 
 {#snippet navigation()}
-	<ol>
-		{@render link('Home', '/')}
-	</ol>
-	<hr class="hr" />
-	<ol>
-		{#each mockPages as mockPage, i}
-			{@render link(mockPage.header, `/${i}`)}
-		{/each}
-	</ol>
+	<Navigation.Content>
+		<Navigation.Group>
+			{@render link('Home', '/')}
+		</Navigation.Group>
+		<Navigation.Group>
+			{#each mockPages as mockPage, i}
+				{@render link(mockPage.header, `/${i}`)}
+			{/each}
+			{@render link('Überprüfung', `/${mockPages.length}`)}
+		</Navigation.Group>
+	</Navigation.Content>
 {/snippet}
 
-<div id="nav__popover" popover="auto" class="top-10 w-fit">
-	{@render navigation()}
+<div id="nav__popover" popover="auto" class="top-24 left-auto right-2">
+	<Navigation>
+		{@render navigation()}
+	</Navigation>
 </div>
 
 <AppBar>
@@ -59,6 +64,12 @@
 		</AppBar.Trail>
 	</AppBar.Toolbar>
 </AppBar>
+
+<aside class="not-md:hidden left-4 right-2 top-24 fixed w-100">
+	<Navigation layout="sidebar">
+		{@render navigation()}
+	</Navigation>
+</aside>
 
 <div class="max-w-xl mx-auto">
 	<div class="px-2 py-4">
