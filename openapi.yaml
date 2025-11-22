@@ -127,14 +127,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApplicationData'
 
-  /internal/documents/{documentId}:
+  /internal/documents/{applicationId}/{type}:
     get:
       tags:
         - Internal
       summary: Lädt ein Dokument herunter
       parameters:
         - in: path
-          name: documentId
+          name: applicationId
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: type
           schema:
             type: string
           required: true
