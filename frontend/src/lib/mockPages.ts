@@ -1,4 +1,4 @@
-import type { CheckPageContent, MockPageContent } from '$lib/types';
+import type { MockPageContent } from '$lib/types';
 
 export const mockPages: MockPageContent[] = [
 	{
@@ -44,16 +44,3 @@ export const mockPages: MockPageContent[] = [
 		]
 	}
 ] as const;
-
-export const checkPage = checkPageFromMockPages(mockPages);
-
-function checkPageFromMockPages(mockPages: MockPageContent[]): CheckPageContent {
-	const checks = mockPages.reduce(
-		(acc, mockPage) => [...acc, { checkName: mockPage.header }],
-		[] as CheckPageContent['checks']
-	);
-	return {
-		type: 'check',
-		checks
-	};
-}
