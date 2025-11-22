@@ -4,6 +4,8 @@ info:
   description: API für das Einwanderungsbüro-Dashboard. Verwaltet den Status und die Validierung von Einbürgerungsanträgen.
   version: 1.0.0
 servers:
+  - url: https://hackatum-api-254788991896.europe-west3.run.app/api/v1
+    description: Live server
   - url: http://localhost:3000/api/v1
     description: Lokaler Entwicklungsserver
 
@@ -68,7 +70,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Validation started."
+                    example: "Validation started"
 
   # ----------------------------------------------------------------
   # 3. ABSCHLUSS-AKTIONEN VOM USER

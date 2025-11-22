@@ -91,7 +91,7 @@ app.post('/api/v1/applications/:id/start-validation', async (req: Request, res: 
     // 2. Asynchronously trigger the "Cloud Function"
     simulateCloudFunction(id);
 
-    res.status(202).json({ message: 'Validation started.' });
+    res.status(202).json({ message: 'Validation started' });
 });
 
 // ------------------------------------------------------
