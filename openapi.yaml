@@ -1,0 +1,291 @@
+openapi: 3.0.3
+info:
+  title: Immigration Workflow Broker API
+  description: API für das Einwanderungsbüro-Dashboard. Verwaltet den Status und die Validierung von Einbürgerungsanträgen.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Lokaler Entwicklungsserver
+
+tags:
+  - name: Frontend
+    description: Endpunkte, die vom React/Vue/Angular Frontend aufgerufen werden
+  - name: Internal
+    description: Endpunkte für die FaaS/Cloud Functions oder interne Prozesse
+
+paths:
+  # ----------------------------------------------------------------
+  # 1. HAUPTDATEN LADEN & POLLEN
+  # ----------------------------------------------------------------
+  /applications/{applicationId}:
+    get:
+      tags:
+        - Frontend
+      summary: Ruft den aktuellen Status und die Daten des Antrags ab
+      description: >
+        Das Frontend ruft dies initial auf und pollt diesen Endpunkt (z.B. alle 3s),
+        um zu prüfen, ob 'validationStatus' von 'IN_PROGRESS' auf 'COMPLETED' gewechselt ist.
+      parameters:
+        - in: path
+          name: applicationId
+          schema:
+            type: string
+            example: "12345-abcde"
+          required: true
+      responses:
+        '200':
+          description: Erfolgreiche Rückgabe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationState'
+        '404':
+          description: Antrag nicht gefunden
+
+  # ----------------------------------------------------------------
+  # 2. VALIDIERUNG STARTEN
+  # ----------------------------------------------------------------
+  /applications/{applicationId}/start-validation:
+    post:
+      tags:
+        - Frontend
+      summary: Startet den Validierungsprozess explizit
+      description: >
+        Dient dazu, den Prozess explizit zu starten, damit das Polling (GET) rein lesend bleibt.
+      parameters:
+        - in: path
+          name: applicationId
+          schema:
+            type: string
+          required: true
+      responses:
+        '202':
+          description: Prozess gestartet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Validation started."
+
+  # ----------------------------------------------------------------
+  # 3. ABSCHLUSS-AKTIONEN VOM USER
+  # ----------------------------------------------------------------
+  /applications/{applicationId}/submit:
+    post:
+      tags:
+        - Frontend
+      summary: Antrag endgültig einreichen (trotz evtl. Warnungen)
+      parameters:
+        - in: path
+          name: applicationId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Erfolgreich eingereicht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissionId:
+                    type: string
+                  status:
+                    type: string
+                    example: SUBMITTED
+
+  # ----------------------------------------------------------------
+  # 4. INTERNAL: DATENABRUF FÜR VALIDIERUNG
+  # ----------------------------------------------------------------
+  /internal/applications/{applicationId}/data:
+    get:
+      tags:
+        - Internal
+      summary: Ruft die kompletten Antragsdaten für die Validierung ab
+      parameters:
+        - in: path
+          name: applicationId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Antragsdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationData'
+
+  /internal/documents/{documentId}:
+    get:
+      tags:
+        - Internal
+      summary: Lädt ein Dokument herunter
+      parameters:
+        - in: path
+          name: documentId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Datei-Inhalt
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+
+  # ----------------------------------------------------------------
+  # 4. RÜCKKANAL FÜR FAAS / VALIDATOR
+  # ----------------------------------------------------------------
+  /internal/applications/{applicationId}/validation-result:
+    post:
+      tags:
+        - Internal
+      summary: Callback für die FaaS Cloud Function
+      description: Die Cloud Function ruft diesen Endpunkt auf, wenn sie fertig gerechnet hat.
+      security: [] # Im Hackathon evtl. ohne Auth, sonst API-Key
+      parameters:
+        - in: path
+          name: applicationId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationReport'
+      responses:
+        '200':
+          description: Ergebnis empfangen und in DB gespeichert
+
+components:
+  schemas:
+    # Das Hauptobjekt für das Frontend
+    ApplicationState:
+      type: object
+      properties:
+        id:
+          type: string
+        applicantName:
+          type: string
+          example: "Max Mustermann"
+        applicant:
+          $ref: '#/components/schemas/ApplicantDetails'
+        # Ein einfacher Status für die UI-Steuerung
+        status:
+          type: string
+          enum: [DRAFT, VALIDATING, READY_TO_SUBMIT, READY_TO_SUBMIT_WITH_PROBLEMS, SUBMITTED]
+          description: Der globale Status des Antrags
+        
+        # Hier stecken die Ergebnisse der Prüfung drin
+        validationReport:
+          $ref: '#/components/schemas/ValidationReport'
+        
+        # Die Daten, die bereits eingegeben wurden (Read-Only für diese View)
+        submittedData:
+          type: object
+          description: Rohdaten aus DB (Gehalt, Zertifikate etc.) zur Anzeige
+          properties:
+            uploadedDocuments:
+              type: array
+              items:
+                $ref: '#/components/schemas/DocumentMetadata'
+
+    # Die Liste aller Prüfungen
+    ValidationReport:
+      type: object
+      properties:
+        isComplete:
+          type: boolean
+          description: True, wenn die Cloud Function fertig ist.
+          example: true
+        overallResult:
+          type: string
+          enum: [PENDING, SUCCESS, WARNING, CRITICAL_ERROR]
+          description: Ampel-Status für das gesamte Formular.
+        checkedAt:
+          type: string
+          format: date-time
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckResult'
+
+    # Ein einzelnes Prüfergebnis (z.B. "Gehaltscheck")
+    CheckResult:
+      type: object
+      properties:
+        checkId:
+          type: string
+          example: "salary_check"
+        title:
+          type: string
+          example: "Gehaltsnachweis Prüfung"
+        status:
+          type: string
+          enum: [PASS, FAIL, WARNING, PENDING]
+        message:
+          type: string
+          description: Text für den User, warum es fehlgeschlagen ist.
+          example: "Das Einkommen der letzten 3 Monate ist zu gering."
+        affectedField:
+          type: string
+          description: Optionaler Pointer auf das Feld, das falsch ist.
+    
+    # Metadaten zu Dokumenten
+    DocumentMetadata:
+      type: object
+      properties:
+        docId:
+          type: string
+        type:
+          type: string
+          example: "salary_slip"
+        filename:
+          type: string
+        url:
+          type: string
+          description: Link zum Anzeigen im Frontend
+
+    ApplicantDetails:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: "Max"
+        lastName:
+          type: string
+          example: "Mustermann"
+        email:
+          type: string
+          example: "max@example.com"
+        address:
+          type: string
+          example: "Musterstraße 1, 80331 München"
+        nationality:
+          type: string
+          example: "United Kingdom"
+
+    ApplicationData:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        applicant:
+          $ref: '#/components/schemas/ApplicantDetails'
+        submittedDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentMetadata'
