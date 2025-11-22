@@ -327,8 +327,10 @@ app.get('/api/v1/internal/documents/:applicationId/:type', async (req: Request, 
 
         const arrayBuffer = await fileRes.arrayBuffer();
         res.send(Buffer.from(arrayBuffer));
+        return;
     } catch (error) {
         console.error(`Error fetching document ${applicationId}/${type}:`, error);
+        return;
     }
 
     res.status(202).json({ message: 'Validation started' });
