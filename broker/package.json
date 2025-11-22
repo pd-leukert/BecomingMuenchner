@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx ts-node server.ts",
     "api": "npx openapi-typescript ../openapi.yaml -o src/types.ts",
-    "start": "npx tsx server.ts"
+    "start": "npx tsx server.ts",
+    "deploy": "gcloud run deploy hackatum-api --source ."
   },
   "keywords": [],
   "author": "",
