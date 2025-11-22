@@ -3,7 +3,7 @@
 	import MockPage from './MockPage.svelte';
 	import CheckPage from './CheckPage.svelte';
 
-	const pageContent = page.data.pageContent;
+	const pageContent = $derived(page.data.pageContent);
 </script>
 
 {#if pageContent.type === 'mock'}
