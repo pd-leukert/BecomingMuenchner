@@ -17,7 +17,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3000;
+const PORT_NUMBER = parseInt(process.env.PORT || '8080', 10);
 
 // --- HACKATHON DATABASE (In-Memory) ---
 // Jetzt ist die Map typsicher! TypeScript wird meckern, wenn Mock-Daten falsch sind.
@@ -229,7 +229,7 @@ function simulateCloudFunction(appId: string) {
     }, 3000);
 }
 
-app.listen(PORT, () => {
-    console.log(`Broker läuft auf http://localhost:${PORT}`);
+app.listen(PORT_NUMBER, '0.0.0.0', () => {
+    console.log(`Broker läuft auf Port ${PORT_NUMBER}`);
     console.log(`Test-ID: 12345-abcde`);
 });

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx ts-node server.ts",
-    "api": "npx openapi-typescript ../openapi.yaml -o src/types.ts"
+    "api": "npx openapi-typescript ../openapi.yaml -o src/types.ts",
+    "start": "npx tsx server.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "@types/node": "^24.10.1",
     "openapi-typescript": "^7.10.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "tsx": "^4.7.1"
   }
 }
