@@ -25,9 +25,16 @@ const db = new Map<string, ApplicationState>();
 const applicantsDb = new Map<string, ApplicantDetails>();
 
 // Mock-Daten initialisieren
-db.set('12345-abcde', {
-    id: '12345-abcde',
+db.set("0", {
+    id: "0",
     applicantName: 'Erika Musterfrau',
+    applicant: {
+        firstName: 'Erika',
+        lastName: 'Musterfrau',
+        email: 'erika.musterfrau@example.com',
+        address: 'Musterstraße 1, 80331 München',
+        nationality: 'Germany'
+    },
     status: 'DRAFT', // Muss einer der Enum-Werte aus der YAML sein!
     submittedData: {
         uploadedDocuments: [
@@ -105,6 +112,11 @@ app.post('/api/v1/internal/applications/:id/validation-result', (req: Request, r
     // Globalen Status ableiten
     if (result.overallResult === 'CRITICAL_ERROR') {
         // Logik: Bei Fehler bleibt es sichtbar, oder Status ändert sich
+        // Wir lassen es hier mal auf VALIDATING oder setzen es auf einen Fehlerstatus, 
+        // aber laut Enum gibt es keinen expliziten ERROR Status für den Antrag, nur im Report.
+        // Eventuell könnte man es auf DRAFT zurücksetzen?
+    } else if (result.overallResult === 'WARNING') {
+        appData.status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
     } else {
         appData.status = 'READY_TO_SUBMIT';
     }
@@ -128,35 +140,8 @@ app.post('/api/v1/applications/:id/submit', (req: Request, res: Response) => {
     }
 });
 
-/* app.post('/api/v1/applications/:id/reject', (req: Request, res: Response) => {
-    const appData = db.get(req.params.id);
-    if (appData) {
-        // Reset status or handle rejection logic
-        appData.status = 'DRAFT'; 
-        res.sendStatus(200);
-    } else {
-        res.status(404).send();
-    }
-}); */
-
 // ------------------------------------------------------
-// 5. Frontend: Nutzerdaten abrufen
-// ------------------------------------------------------
-/* app.get('/api/v1/applicants/:applicantId', (req: Request, res: Response) => {
-    const applicant = applicantsDb.get(req.params.applicantId);
-    if (!applicant) {
-        // Fallback für Demo, falls ID nicht passt, nehmen wir den Default
-        if (req.params.applicantId === 'applicant_1') {
-             return res.status(404).json({ error: 'Applicant not found' });
-        }
-        // Return default for demo purposes if not found strictly
-        return res.json(applicantsDb.get('applicant_1'));
-    }
-    res.json(applicant);
-}); */
-
-// ------------------------------------------------------
-// 6. Internal: Daten für Validierung abrufen
+// 5. Internal: Daten für Validierung abrufen
 // ------------------------------------------------------
 app.get('/api/v1/internal/applications/:applicationId/data', (req: Request, res: Response) => {
     const appId = req.params.applicationId;
@@ -168,7 +153,10 @@ app.get('/api/v1/internal/applications/:applicationId/data', (req: Request, res:
 
     // Wir bauen das ApplicationData Objekt zusammen
     // In einer echten App würden wir den Applicant anhand einer ID im ApplicationState finden
-    const applicant = applicantsDb.get('applicant_1'); // Hardcoded für Demo
+    // const applicant = applicantsDb.get('applicant_1'); // Hardcoded für Demo
+    
+    // Falls wir den Applicant im State haben, nehmen wir ihn von dort, sonst Fallback
+    const applicant = appData.applicant || applicantsDb.get('applicant_1');
 
     const internalData: ApplicationData = {
         applicationId: appId,
@@ -223,7 +211,11 @@ function simulateCloudFunction(appId: string) {
         const appData = db.get(appId);
         if (appData) {
             appData.validationReport = mockResult;
-            appData.status = 'READY_TO_SUBMIT';
+            if (mockResult.overallResult === 'WARNING') {
+                appData.status = 'READY_TO_SUBMIT_WITH_PROBLEMS';
+            } else {
+                appData.status = 'READY_TO_SUBMIT';
+            }
             console.log(`[MockFaaS] Fertig. Daten gespeichert.`);
         }
     }, 3000);

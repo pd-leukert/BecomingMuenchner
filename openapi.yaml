@@ -98,45 +98,8 @@ paths:
                     type: string
                     example: SUBMITTED
 
-  #/applications/{applicationId}/reject:
-  #  post:
-  #    tags:
-  #      - Frontend
-  #    summary: Zurück zur Korrektur (User bricht ab)
-  #    parameters:
-  #      - in: path
-  #        name: applicationId
-  #        schema:
-  #          type: string
-  #        required: true
-  #    responses:
-  #      '200':
-  #        description: Status zurückgesetzt, User wird umgeleitet.
-
   # ----------------------------------------------------------------
-  # 4. FRONTEND: NUTZERDATEN
-  # ----------------------------------------------------------------
-  #/applicants/{applicantId}:
-  #  get:
-  #    tags:
-  #      - Frontend
-  #    summary: Ruft Nutzerdaten zur Anzeige ab
-  #    parameters:
-  #      - in: path
-  #        name: applicantId
-  #        schema:
-  #          type: string
-  #        required: true
-  #    responses:
-  #      '200':
-  #        description: Nutzerdaten
-  #        content:
-  #          application/json:
-  #            schema:
-  #              $ref: '#/components/schemas/ApplicantDetails'
-
-  # ----------------------------------------------------------------
-  # 5. INTERNAL: DATENABRUF FÜR VALIDIERUNG
+  # 4. INTERNAL: DATENABRUF FÜR VALIDIERUNG
   # ----------------------------------------------------------------
   /internal/applications/{applicationId}/data:
     get:
@@ -218,6 +181,8 @@ components:
         applicantName:
           type: string
           example: "Max Mustermann"
+        applicant:
+          $ref: '#/components/schemas/ApplicantDetails'
         # Ein einfacher Status für die UI-Steuerung
         status:
           type: string
