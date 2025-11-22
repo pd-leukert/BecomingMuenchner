@@ -6,7 +6,7 @@
 		postApplicationsByApplicationIdSubmit
 	} from '$lib/client';
 	import { API_BASE } from '$lib/constants';
-	import CheckResult from '$lib/CheckResult.svelte';
+	import CheckResults from '$lib/CheckResults.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import LoadingSpinner from '$lib/LoadingSpinner.svelte';
@@ -64,23 +64,27 @@
 	}
 </script>
 
-<h1 class="h1">Überprüfung der Angaben</h1>
+<h1 class="h1">Pre-check of submission</h1>
 
 <section>
-	<p class="p">Lasse deine Angaben überprüfen, bevor du sie endgültig einreichst.</p>
-	<button type="button" class="btn" onclick={startValidation}>Validierung starten</button>
+	<p class="p">Check your submission before submitting it.</p>
+	<button type="button" class="btn preset-tonal-primary mx-auto my-4" onclick={startValidation}
+		>{isCheckComplete ? 'Redo' : 'Start'} validation</button
+	>
 </section>
-<section>
+<section class="pb-4">
 	<div class="mx-auto w-fit">
 		{#if timeoutId !== undefined}
 			<LoadingSpinner />
 		{/if}
 	</div>
-	{#each valRep?.checks ?? [] as checkResult, i (i)}
-		<CheckResult {checkResult} />
-	{/each}
+	{#if timeoutId === undefined}
+		<div transition:scale>
+			<CheckResults checkResults={valRep?.checks ?? []} />
+		</div>
+	{/if}
 </section>
-{#if isCheckComplete}
+{#if isCheckComplete && timeoutId === undefined}
 	<section transition:scale>
 		<form onsubmit={submitValidation}>
 			<h2 class="h2">Submit application</h2>
@@ -90,7 +94,7 @@
 					correct.
 				</div>
 			{/if}
-			<button type="submit" class="btn preset-tonal-primary">Submit</button>
+			<button type="submit" class="btn preset-tonal-primary ml-auto block">Submit</button>
 		</form>
 	</section>
 {/if}

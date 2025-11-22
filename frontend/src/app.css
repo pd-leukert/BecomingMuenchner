@@ -13,3 +13,15 @@
 	font-size: 1.7rem;
 	margin: 0.5rem 0 1rem;
 }
+
+.h3 {
+	font-size: 1.4rem;
+}
+
+.h4 {
+    font-size: 1.2rem;
+}
+
+details summary::-webkit-details-marker {
+	display: none;
+}
