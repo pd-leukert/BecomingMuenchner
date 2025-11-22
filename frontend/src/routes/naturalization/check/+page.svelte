@@ -10,10 +10,24 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import LoadingSpinner from '$lib/LoadingSpinner.svelte';
+	import { scale } from 'svelte/transition';
 
 	let valRep: ApplicationState['validationReport'] | undefined = $state(undefined);
 
 	let timeoutId: undefined | NodeJS.Timeout = $state(undefined);
+
+	let isCheckComplete = $state(false);
+
+	const areAllChecksFine = $derived(computeAreAllChecksFine(valRep));
+
+	function computeAreAllChecksFine(
+		validationReport: ApplicationState['validationReport'] | undefined
+	) {
+		if (validationReport === undefined) {
+			return true;
+		}
+		return validationReport.checks.every(({ status }) => status !== 'FAIL');
+	}
 
 	async function submitValidation() {
 		await postApplicationsByApplicationIdSubmit({
@@ -41,6 +55,7 @@
 					if (data?.status !== 'VALIDATING') {
 						clearInterval(timeoutId);
 						timeoutId = undefined;
+						isCheckComplete = true;
 					}
 					valRep = data?.validationReport;
 				}
@@ -65,9 +80,17 @@
 		<CheckResult {checkResult} />
 	{/each}
 </section>
-<section>
-	<form onsubmit={submitValidation}>
-		<h2 class="h2">Submit application</h2>
-		<button type="submit" class="btn preset-tonal-primary">Submit</button>
-	</form>
-</section>
+{#if isCheckComplete}
+	<section transition:scale>
+		<form onsubmit={submitValidation}>
+			<h2 class="h2">Submit application</h2>
+			{#if !areAllChecksFine}
+				<div class="p-4 preset-tonal-warning my-4">
+					Some errors were detected. Please submit if and only if you are sure that this is not
+					correct.
+				</div>
+			{/if}
+			<button type="submit" class="btn preset-tonal-primary">Submit</button>
+		</form>
+	</section>
+{/if}
