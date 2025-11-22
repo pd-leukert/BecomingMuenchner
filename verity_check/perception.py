@@ -97,7 +97,7 @@ def extract_structured_data(image_content_blocks: List[Dict[str, Any]], doc_cate
         print(f"Extraction Error: {e}")
         print(f"Raw content was: {content if 'content' in locals() else 'N/A'}")
         extracted_json = {"error": str(e), "raw_content": content if 'content' in locals() else "N/A"}
-        
+    print(f"✅ Extracted JSON: {extracted_json}")
     return extracted_json
 
 def extract_data(images_base64: List[str], doc_name: str) -> Dict[str, Any]:
