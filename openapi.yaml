@@ -6,7 +6,7 @@ info:
 servers:
   - url: https://hackatum-api-254788991896.europe-west3.run.app/api/v1
     description: Live server
-  - url: http://localhost:3000/api/v1
+  - url: http://localhost:8080/api/v1
     description: Lokaler Entwicklungsserver
 
 tags:
@@ -35,13 +35,13 @@ paths:
             example: "12345-abcde"
           required: true
       responses:
-        '200':
+        "200":
           description: Erfolgreiche Rückgabe
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationState'
-        '404':
+                $ref: "#/components/schemas/ApplicationState"
+        "404":
           description: Antrag nicht gefunden
 
   # ----------------------------------------------------------------
@@ -61,7 +61,7 @@ paths:
             type: string
           required: true
       responses:
-        '202':
+        "202":
           description: Prozess gestartet
           content:
             application/json:
@@ -89,7 +89,7 @@ paths:
             type: string
           required: true
       responses:
-        '200':
+        "200":
           description: Erfolgreich eingereicht
           content:
             application/json:
@@ -120,12 +120,12 @@ paths:
             type: string
           required: true
       responses:
-        '200':
+        "200":
           description: Antragsdaten
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationData'
+                $ref: "#/components/schemas/ApplicationData"
 
   /internal/documents/{applicationId}/{type}:
     get:
@@ -144,7 +144,7 @@ paths:
             type: string
           required: true
       responses:
-        '200':
+        "200":
           description: Datei-Inhalt
           content:
             application/pdf:
@@ -177,9 +177,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ValidationReport'
+              $ref: "#/components/schemas/ValidationReport"
       responses:
-        '200':
+        "200":
           description: Ergebnis empfangen und in DB gespeichert
 
 components:
@@ -201,17 +201,24 @@ components:
           type: string
           example: "Max Mustermann"
         applicant:
-          $ref: '#/components/schemas/ApplicantDetails'
+          $ref: "#/components/schemas/ApplicantDetails"
         # Ein einfacher Status für die UI-Steuerung
         status:
           type: string
-          enum: [DRAFT, VALIDATING, READY_TO_SUBMIT, READY_TO_SUBMIT_WITH_PROBLEMS, SUBMITTED]
+          enum:
+            [
+              DRAFT,
+              VALIDATING,
+              READY_TO_SUBMIT,
+              READY_TO_SUBMIT_WITH_PROBLEMS,
+              SUBMITTED,
+            ]
           description: Der globale Status des Antrags
-        
+
         # Hier stecken die Ergebnisse der Prüfung drin
         validationReport:
-          $ref: '#/components/schemas/ValidationReport'
-        
+          $ref: "#/components/schemas/ValidationReport"
+
         # Die Daten, die bereits eingegeben wurden (Read-Only für diese View)
         submittedData:
           type: object
@@ -222,7 +229,7 @@ components:
             uploadedDocuments:
               type: array
               items:
-                $ref: '#/components/schemas/DocumentMetadata'
+                $ref: "#/components/schemas/DocumentMetadata"
 
     # Die Liste aller Prüfungen
     ValidationReport:
@@ -251,7 +258,7 @@ components:
         checks:
           type: array
           items:
-            $ref: '#/components/schemas/CheckResult'
+            $ref: "#/components/schemas/CheckResult"
 
     # Ein einzelnes Prüfergebnis (z.B. "Gehaltscheck")
     CheckResult:
@@ -267,7 +274,7 @@ components:
           example: "Language Certificate"
         type:
           type: string
-          example: "salary_slip"          
+          example: "salary_slip"
         checkDisplayTitle:
           type: string
           example: "Validity"
@@ -278,7 +285,7 @@ components:
           type: string
           description: Text für den User, warum es fehlgeschlagen ist.
           example: "Das Einkommen der letzten 3 Monate ist zu gering."
-    
+
     # Metadaten zu Dokumenten
     DocumentMetadata:
       type: object
@@ -334,8 +341,8 @@ components:
         applicationId:
           type: string
         applicant:
-          $ref: '#/components/schemas/ApplicantDetails'
+          $ref: "#/components/schemas/ApplicantDetails"
         submittedDocuments:
           type: array
           items:
-            $ref: '#/components/schemas/DocumentMetadata'
+            $ref: "#/components/schemas/DocumentMetadata"
