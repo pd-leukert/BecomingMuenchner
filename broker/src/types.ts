@@ -266,6 +266,7 @@ export interface components {
             id?: string;
             /** @example Max Mustermann */
             applicantName?: string;
+            applicant?: components["schemas"]["ApplicantDetails"];
             /**
              * @description Der globale Status des Antrags
              * @enum {string}
