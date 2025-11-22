@@ -268,7 +268,7 @@ components:
           example: "Validity"
         status:
           type: string
-          enum: [PASS, FAIL, WARNING, PENDING]
+          enum: [PASS, FAIL]
         message:
           type: string
           description: Text für den User, warum es fehlgeschlagen ist.
