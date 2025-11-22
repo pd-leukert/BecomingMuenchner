@@ -23,7 +23,6 @@
 		checkResults: CheckResult[],
 		documentMetadata: DocumentMetadata[]
 	): Record<string, ProcessedCheckResult> {
-        console.log(documentMetadata)
 		const intermediateRes = checkResults.reduce(
 			(acc, { documentTitle, ...rest }) => {
 				if (documentTitle in acc) {
@@ -37,6 +36,8 @@
 			},
 			{} as Record<string, ProcessedCheckResult>
 		);
+
+		checkResults.sort((res) => (res.status === 'FAIL' ? 0 : 1));
 
 		return documentMetadata.reduce(
 			(acc, { url, type }) => {
