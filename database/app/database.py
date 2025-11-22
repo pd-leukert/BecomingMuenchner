@@ -17,6 +17,9 @@ DB_NAME = os.getenv("DB_NAME")
 connector = Connector()
 
 def getconn():
+    if not INSTANCE_CONNECTION_NAME:
+        raise ValueError("INSTANCE_CONNECTION_NAME environment variable is not set. Please configure it in Cloud Run.")
+
     conn = connector.connect(
         INSTANCE_CONNECTION_NAME,
         "pymysql",

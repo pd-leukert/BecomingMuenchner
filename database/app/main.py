@@ -135,7 +135,7 @@ def update_status_application(application_id: int, status: str, db: Session = De
     db.refresh(application)
     return application
 
-@app.post("/update_result_application/{application_id}")
+@app.post("/update_result_application/{application_id}", response_model=ApplicationScheme)
 def update_result_application(application_id: int, result: bool, db: Session = Depends(get_db)):
     application = db.query(Application).filter(Application.id == application_id).first()
     if not application:
@@ -177,7 +177,7 @@ def get_result_message_document(application_id: int, document_kind: str, criteri
 
 @app.get("/get_documents_by_application/{application_id}", response_model=list[DocumentScheme])
 def get_documents_by_application(application_id: int, db: Session = Depends(get_db)):
-    documents = db.query(Document).filter(Document.id == application_id).all()
+    documents = db.query(Document).filter(Document.application_id == application_id).all()
     if not documents:
         raise HTTPException(status_code=404, detail="Dokumente nicht gefunden")
     return documents
