@@ -223,5 +223,5 @@ function simulateCloudFunction(appId: string) {
 
 app.listen(PORT_NUMBER, '0.0.0.0', () => {
     console.log(`Broker running on port ${PORT_NUMBER}`);
-    console.log(`Test-ID: 12345-abcde`);
+    console.log(`Test-ID: 0`);
 });
