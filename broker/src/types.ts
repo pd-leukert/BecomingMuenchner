@@ -294,10 +294,10 @@ export interface components {
             checks: components["schemas"]["CheckResult"][];
         };
         CheckResult: {
-            /** @example salary_check */
-            checkId: string;
-            /** @example Gehaltsnachweis Prüfung */
-            title: string;
+            /** @example Language Certificate */
+            documentTitle: string;
+            /** @example Validity */
+            checkDisplayTitle: string;
             /** @enum {string} */
             status: "PASS" | "FAIL" | "WARNING" | "PENDING";
             /**
@@ -305,8 +305,6 @@ export interface components {
              * @example Das Einkommen der letzten 3 Monate ist zu gering.
              */
             message: string;
-            /** @description Optionaler Pointer auf das Feld, das falsch ist. */
-            affectedField: string;
         };
         DocumentMetadata: {
             docId: string;
