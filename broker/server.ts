@@ -76,8 +76,19 @@ async function mapToApplicationState(appData: any, docs: any[]): Promise<Applica
         }
     });
 
+    const titleMapping: Record<string, string> = {
+        'salary_slip': 'Salary Slip',
+        'rent_contract': 'Rent Contract',
+        'residence_permit_1': 'Residence Permit 1',
+        'residence_permit_2': 'Residence Permit 2',
+        'residence_permit_3': 'Residence Permit 3',
+        'passport': 'Passport',
+        'language_certificate': 'Language Certificate',
+        'naturalization_test': 'Naturalization Test'
+    };
+
     const checks: CheckResult[] = docs.map((d: any) => ({
-        documentTitle: d.document_kind,
+        documentTitle: titleMapping[d.document_kind] || d.document_kind,
         type: d.document_kind,
         checkDisplayTitle: d.criteria,
         status: d.result ? 'PASS' : 'FAIL',
