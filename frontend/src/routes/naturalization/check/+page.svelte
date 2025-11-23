@@ -6,13 +6,17 @@
 		postApplicationsByApplicationIdSubmit
 	} from '$lib/client';
 	import { API_BASE } from '$lib/constants';
-	import CheckResult from '$lib/CheckResult.svelte';
+	import CheckResults from '$lib/CheckResults.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import LoadingSpinner from '$lib/LoadingSpinner.svelte';
 	import { scale } from 'svelte/transition';
+	import { RotateCcw, Send, Sparkles, X } from 'lucide-svelte';
+	import { getApplicationId } from '$lib/applicationId.svelte';
 
 	let valRep: ApplicationState['validationReport'] | undefined = $state(undefined);
+	let documentMetadata: ApplicationState['submittedData']['uploadedDocuments'] | undefined =
+		$state(undefined);
 
 	let timeoutId: undefined | NodeJS.Timeout = $state(undefined);
 
@@ -31,7 +35,7 @@
 
 	async function submitValidation() {
 		await postApplicationsByApplicationIdSubmit({
-			path: { applicationId: '0' },
+			path: { applicationId: getApplicationId() },
 			baseUrl: API_BASE
 		});
 		goto(resolve('/success'));
@@ -42,47 +46,82 @@
 			return;
 		}
 
+		valRep = undefined;
+		documentMetadata = undefined;
+		isCheckComplete = false;
+
 		postApplicationsByApplicationIdStartValidation({
-			path: { applicationId: '0' },
+			path: { applicationId: getApplicationId() },
 			baseUrl: API_BASE
 		});
 		timeoutId = setInterval(() => {
-			getApplicationsByApplicationId({ path: { applicationId: '0' }, baseUrl: API_BASE }).then(
-				({ data }) => {
-					if (!data) {
-						console.log(':(');
-					}
-					if (data?.status !== 'VALIDATING') {
-						clearInterval(timeoutId);
-						timeoutId = undefined;
-						isCheckComplete = true;
-					}
-					valRep = data?.validationReport;
+			getApplicationsByApplicationId({
+				path: { applicationId: getApplicationId() },
+				baseUrl: API_BASE
+			}).then(({ data }) => {
+				if (!data) {
+					cancelValidation();
+					return;
 				}
-			);
+				if (data?.status !== 'VALIDATING') {
+					cancelValidation();
+					valRep = data?.validationReport;
+					documentMetadata = data?.submittedData.uploadedDocuments;
+					isCheckComplete = true;
+				}
+			});
 		}, 2000);
+	}
+
+	function cancelValidation() {
+		clearInterval(timeoutId);
+		timeoutId = undefined;
 	}
 </script>
 
-<h1 class="h1">Überprüfung der Angaben</h1>
+<h1 class="h1">Pre-check of submission</h1>
 
 <section>
-	<p class="p">Lasse deine Angaben überprüfen, bevor du sie endgültig einreichst.</p>
-	<button type="button" class="btn" onclick={startValidation}>Validierung starten</button>
+	<p class="p">Check your documents before submitting them.</p>
+	<button
+		type="button"
+		class="btn preset-tonal-primary mx-auto my-4 font-semibold"
+		onclick={startValidation}
+	>
+		{isCheckComplete ? 'Redo' : 'Start'} validation
+		{#if isCheckComplete}
+			<RotateCcw />
+		{:else}
+			<Sparkles />
+		{/if}
+	</button>
+	{#if timeoutId !== undefined}
+		<button
+			transition:scale
+			type="button"
+			class="btn preset-tonal-error"
+			onclick={cancelValidation}
+		>
+			Cancel
+			<X />
+		</button>
+	{/if}
 </section>
-<section>
+<section class="pb-4">
 	<div class="mx-auto w-fit">
 		{#if timeoutId !== undefined}
 			<LoadingSpinner />
 		{/if}
 	</div>
-	{#each valRep?.checks ?? [] as checkResult, i (i)}
-		<CheckResult {checkResult} />
-	{/each}
+	{#if timeoutId === undefined}
+		<div transition:scale>
+			<CheckResults checkResults={valRep?.checks ?? []} documentMetadata={documentMetadata ?? []} />
+		</div>
+	{/if}
 </section>
-{#if isCheckComplete}
+{#if isCheckComplete && timeoutId === undefined}
 	<section transition:scale>
-		<form onsubmit={submitValidation}>
+		<form onsubmit={submitValidation} class="flex flex-col">
 			<h2 class="h2">Submit application</h2>
 			{#if !areAllChecksFine}
 				<div class="p-4 preset-tonal-warning my-4">
@@ -90,7 +129,7 @@
 					correct.
 				</div>
 			{/if}
-			<button type="submit" class="btn preset-tonal-primary">Submit</button>
+			<button type="submit" class="btn preset-tonal-primary ml-auto">Submit <Send /></button>
 		</form>
 	</section>
 {/if}
