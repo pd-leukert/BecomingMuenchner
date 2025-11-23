@@ -72,7 +72,9 @@
 <AppBar>
 	<AppBar.Toolbar class="flex flex-row">
 		<AppBar.Lead>
-			<a href={resolve('/')} class="btn-icon btn-icon-lg hover:preset-tonal p-0 size-8"><img src={favicon}></a>
+			<a href={resolve('/')} class="btn-icon btn-icon-lg hover:preset-tonal p-0 size-8"
+				><img src={favicon} /></a
+			>
 		</AppBar.Lead>
 		<AppBar.Headline class="h3 mr-auto">BecomingMünchner</AppBar.Headline>
 		<AppBar.Trail>
