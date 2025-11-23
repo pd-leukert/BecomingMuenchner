@@ -14,7 +14,7 @@
 
 	type ProcessedCheckResult = {
 		documentUrl?: string;
-		checks: Omit<CheckResult, 'documentTitle'>[];
+		checks: Omit<CheckResult, 'type'>[];
 	};
 
 	const sortedChecks = $derived(sortChecks(checkResults, documentMetadata));
@@ -24,11 +24,14 @@
 		documentMetadata: DocumentMetadata[]
 	): Record<string, ProcessedCheckResult> {
 		const intermediateRes = checkResults.reduce(
-			(acc, { documentTitle, ...rest }) => {
-				if (documentTitle in acc) {
-					acc[documentTitle].checks.push(rest);
+			(acc, { type, ...rest }) => {
+				if (type === undefined) {
+					return acc;
+				}
+				if (type in acc) {
+					acc[type].checks.push(rest);
 				} else {
-					acc[documentTitle] = {
+					acc[type] = {
 						checks: [rest]
 					};
 				}

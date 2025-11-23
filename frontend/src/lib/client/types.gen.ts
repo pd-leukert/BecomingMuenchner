@@ -23,6 +23,10 @@ export type ApplicationState = {
 
 export type ValidationReport = {
     /**
+     * Applicant ID
+     */
+    applicationId?: string;
+    /**
      * True, wenn die Cloud Function fertig ist.
      */
     isComplete: boolean;
@@ -36,8 +40,9 @@ export type ValidationReport = {
 
 export type CheckResult = {
     documentTitle: string;
+    type?: string;
     checkDisplayTitle: string;
-    status: 'PASS' | 'FAIL' | 'WARNING' | 'PENDING';
+    status: 'PASS' | 'FAIL';
     /**
      * Text für den User, warum es fehlgeschlagen ist.
      */
