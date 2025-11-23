@@ -12,6 +12,7 @@
 	import LoadingSpinner from '$lib/LoadingSpinner.svelte';
 	import { scale } from 'svelte/transition';
 	import { RotateCcw, Send, Sparkles, X } from 'lucide-svelte';
+	import { getApplicationId } from '$lib/applicationId.svelte';
 
 	let valRep: ApplicationState['validationReport'] | undefined = $state(undefined);
 	let documentMetadata: ApplicationState['submittedData']['uploadedDocuments'] | undefined =
@@ -34,7 +35,7 @@
 
 	async function submitValidation() {
 		await postApplicationsByApplicationIdSubmit({
-			path: { applicationId: '0' },
+			path: { applicationId: getApplicationId() },
 			baseUrl: API_BASE
 		});
 		goto(resolve('/success'));
@@ -45,24 +46,30 @@
 			return;
 		}
 
+		valRep = undefined;
+		documentMetadata = undefined;
+		isCheckComplete = false;
+
 		postApplicationsByApplicationIdStartValidation({
-			path: { applicationId: '1' },
+			path: { applicationId: getApplicationId() },
 			baseUrl: API_BASE
 		});
 		timeoutId = setInterval(() => {
-			getApplicationsByApplicationId({ path: { applicationId: '1' }, baseUrl: API_BASE }).then(
-				({ data }) => {
-					if (!data) {
-						console.log(':(');
-					}
-					if (data?.status !== 'VALIDATING') {
-						cancelValidation();
-						isCheckComplete = true;
-					}
+			getApplicationsByApplicationId({
+				path: { applicationId: getApplicationId() },
+				baseUrl: API_BASE
+			}).then(({ data }) => {
+				if (!data) {
+					cancelValidation();
+					return;
+				}
+				if (data?.status !== 'VALIDATING') {
+					cancelValidation();
 					valRep = data?.validationReport;
 					documentMetadata = data?.submittedData.uploadedDocuments;
+					isCheckComplete = true;
 				}
-			);
+			});
 		}, 2000);
 	}
 

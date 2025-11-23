@@ -37,7 +37,7 @@
 			{} as Record<string, ProcessedCheckResult>
 		);
 
-		checkResults.sort((res) => (res.status === 'FAIL' ? 0 : 1));
+		checkResults = checkResults.toSorted((res) => (res.status === 'FAIL' ? 0 : 1));
 
 		return documentMetadata.reduce(
 			(acc, { url, type }) => {
