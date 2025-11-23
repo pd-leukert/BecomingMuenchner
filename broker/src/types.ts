@@ -319,7 +319,7 @@ export interface components {
             /** @example salary_slip */
             type: string;
             filename: string;
-            /** @description Link zum Anzeigen im Frontend */
+            /** @description Direkter Link zur Datei auf Google Cloud Storage zum Anzeigen im Frontend */
             url: string;
         };
         ApplicantDetails: {

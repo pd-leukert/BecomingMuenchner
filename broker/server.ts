@@ -71,7 +71,7 @@ async function mapToApplicationState(appData: any, docs: any[]): Promise<Applica
                 docId: field.key, // Use field key as ID for simplicity
                 type: field.type,
                 filename: appData[field.key].split('/').pop() || field.key,
-                url: `/api/v1/internal/documents/${appData.id}/${field.type}`
+                url: appData[field.key]
             });
         }
     });
