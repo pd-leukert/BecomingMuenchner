@@ -3,29 +3,29 @@ import type { MockPageContent } from '$lib/types';
 export const mockPages: MockPageContent[] = [
 	{
 		type: 'mock',
-		header: 'Identitätsprüfung',
+		header: 'Identity Check',
 		sections: [
 			{
-				documentName: 'Pass',
-				description: 'Dein Pass'
+				documentName: 'Passport',
+				description: 'Submit your passport here'
 			},
 			{
-				documentName: 'Aufenthaltstitel',
-				description: '5 Jahre rechtmäßiger Aufenthalt; 2 Jahre für Ehegatten'
+				documentName: 'Residence permit',
+				description: '5 years of residency; 2 years for spouses'
 			}
 		]
 	},
 	{
 		type: 'mock',
-		header: 'Lebensunterhaltssicherung',
+		header: 'Subsidence',
 		sections: [
 			{
-				documentName: 'Einkommensnachweise',
-				description: 'Kein Geringverdiener?'
+				documentName: 'Proof of income',
+				description: 'U make money'
 			},
 			{
-				documentName: 'Mietvertrag',
-				description: 'Dein Mietvertrag'
+				documentName: 'Rental agreement',
+				description: ''
 			}
 		]
 	},
@@ -34,12 +34,12 @@ export const mockPages: MockPageContent[] = [
 		header: 'Integration',
 		sections: [
 			{
-				documentName: 'Sprachzertifikat',
+				documentName: 'Language certificate',
 				description: 'Deutsche Sprache schwere Sprache'
 			},
 			{
-				documentName: 'Einbürgerungstest',
-				description: 'hmmm.'
+				documentName: 'Naturalization test',
+				description: '?'
 			}
 		]
 	}
