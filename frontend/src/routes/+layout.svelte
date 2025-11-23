@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import { getApplicationId, setApplicationId } from '$lib/applicationId.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 
 	let { children } = $props();
 </script>
@@ -22,25 +23,24 @@
 	</SegmentedControl.Item>
 {/snippet}
 
-{#snippet navigation()}
-	<SegmentedControl.Control>
-		<SegmentedControl.Indicator />
-		{@render link('Home', '/')}
-		{#each mockPages as mockPage, i (i)}
-			{@render link(mockPage.header, `/naturalization/${i}`)}
-		{/each}
-		{@render link('Überprüfung', '/naturalization/check')}
-	</SegmentedControl.Control>
-{/snippet}
-
 <div id="nav__popover" popover="auto" class="top-24 left-auto right-2">
 	<SegmentedControl
 		orientation="vertical"
-		value={getApplicationId()}
+		value={page.url.pathname}
 		onValueChange={({ value }) => goto(value ?? '/')}
 		class="min-w-36"
 	>
-		{@render navigation()}
+		<SegmentedControl.Control>
+			<SegmentedControl.Indicator />
+			{@render link('Home', '/')}
+			{#if page.url.pathname !== '/'}
+				<hr class="hr" />
+				{#each mockPages as mockPage, i (i)}
+					{@render link(mockPage.header, `/naturalization/${i}`)}
+				{/each}
+				{@render link('Überprüfung', '/naturalization/check')}
+			{/if}
+		</SegmentedControl.Control>
 	</SegmentedControl>
 </div>
 
@@ -81,7 +81,7 @@
 			</button>
 			<button
 				type="button"
-				class="btn-icon btn-icon-lg md:hidden"
+				class="btn-icon btn-icon-lg"
 				id="nav-toggle"
 				popovertarget="nav__popover"
 			>
@@ -90,17 +90,6 @@
 		</AppBar.Trail>
 	</AppBar.Toolbar>
 </AppBar>
-
-<aside class="not-md:hidden left-4 right-2 top-24 fixed w-100">
-	<SegmentedControl
-		orientation="vertical"
-		value={getApplicationId()}
-		onValueChange={({ value }) => goto(value ?? '/')}
-		class="min-w-36"
-	>
-		{@render navigation()}
-	</SegmentedControl>
-</aside>
 
 <div class="max-w-xl mx-auto">
 	<div class="p-4">
