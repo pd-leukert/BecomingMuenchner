@@ -53,16 +53,16 @@
 	>
 		<SegmentedControl.Control>
 			<SegmentedControl.Indicator />
-			<SegmentedControl.Item value="1">
-				<SegmentedControl.ItemText>1</SegmentedControl.ItemText>
-				<SegmentedControl.ItemHiddenInput />
-			</SegmentedControl.Item>
-			<SegmentedControl.Item value="2">
-				<SegmentedControl.ItemText>2</SegmentedControl.ItemText>
-				<SegmentedControl.ItemHiddenInput />
-			</SegmentedControl.Item>
 			<SegmentedControl.Item value="3">
 				<SegmentedControl.ItemText>3</SegmentedControl.ItemText>
+				<SegmentedControl.ItemHiddenInput />
+			</SegmentedControl.Item>
+			<SegmentedControl.Item value="6">
+				<SegmentedControl.ItemText>6</SegmentedControl.ItemText>
+				<SegmentedControl.ItemHiddenInput />
+			</SegmentedControl.Item>
+			<SegmentedControl.Item value="7">
+				<SegmentedControl.ItemText>7</SegmentedControl.ItemText>
 				<SegmentedControl.ItemHiddenInput />
 			</SegmentedControl.Item>
 		</SegmentedControl.Control>
