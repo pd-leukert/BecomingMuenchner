@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '$lib/assets/favicon.png';
 	import { AppBar, SegmentedControl } from '@skeletonlabs/skeleton-svelte';
 	import { Building2, MenuIcon, UserRound } from 'lucide-svelte';
 	import { mockPages } from '$lib/mockPages';
@@ -72,7 +72,7 @@
 <AppBar>
 	<AppBar.Toolbar class="flex flex-row">
 		<AppBar.Lead>
-			<a href={resolve('/')} class="btn-icon btn-icon-lg hover:preset-tonal"><Building2 /></a>
+			<a href={resolve('/')} class="btn-icon btn-icon-lg hover:preset-tonal p-0 size-8"><img src={favicon}></a>
 		</AppBar.Lead>
 		<AppBar.Headline class="h3 mr-auto">BecomingMünchner</AppBar.Headline>
 		<AppBar.Trail>
