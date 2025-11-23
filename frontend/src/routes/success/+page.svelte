@@ -6,4 +6,4 @@
 
 <CircleCheck class="h-20 w-20 mx-auto my-8" />
 
-<p>Your submission as submitted and will be processed. We will notify you about further updates.</p>
+<p>Your submission was submitted and will be processed. We will notify you about further updates.</p>
