@@ -205,6 +205,7 @@ app.post('/api/v1/applications/:id/start-validation', async (req: Request, res: 
 // ------------------------------------------------------
 app.post('/api/v1/internal/applications/:id/validation-result', async (req: Request, res: Response) => {
     const id = req.params.id;
+    console.log(`[Broker] Result received for ${id}.`);
 
     // IMPORTANT: Express doesn't know what's in the body. We must "cast" it.
     const result = req.body as ValidationReport;
@@ -352,6 +353,7 @@ app.get('/api/v1/internal/documents/:applicationId/:type', async (req: Request, 
 // ------------------------------------------------------
 app.post('/api/v1/internal/applications/:id/validation-result', async (req: Request, res: Response) => {
     const id = req.params.id;
+    console.log(`[Broker] Result received for ${id}.`);
 
     // IMPORTANT: Express doesn't know what's in the body. We must "cast" it.
     const result = req.body as ValidationReport;
@@ -411,7 +413,7 @@ app.post('/api/v1/internal/applications/:id/validation-result', async (req: Requ
         }
     }
 
-    console.log(`[Broker] Result received and saved for ${id}.`);
+    console.log(`[Broker] Result saved for ${id}.`);
     res.sendStatus(200);
 });
 
