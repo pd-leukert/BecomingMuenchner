@@ -55,7 +55,7 @@
 		);
 	}
 
-	function computeAllFine(documentResults: Omit<CheckResult, 'documentTitle'>[]) {
+	function computeAllFine(documentResults: Omit<CheckResult, 'type' | 'documentTitle'>[]) {
 		return documentResults.every(({ status }) => status === 'PASS');
 	}
 
