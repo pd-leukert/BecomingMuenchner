@@ -13,11 +13,11 @@
 		<p>{section.description}</p>
 		<span class="flex gap-4 my-4">
 			<button class="btn preset-tonal-secondary font-semibold" onclick={() => void {}}>
-				Hochladen <Upload />
+				Upload <Upload />
 			</button>
 			<span class="flex items-center gap-2">
 				<CircleCheck class="inline" />
-				Dokument hochgeladen
+				Uploaded Document
 			</span>
 		</span>
 	</section>

@@ -11,7 +11,7 @@ export const mockPages: MockPageContent[] = [
 			},
 			{
 				documentName: 'Residence permit',
-				description: '5 Jahre of residents; 2 years for spouses'
+				description: '5 years of residency; 2 years for spouses'
 			}
 		]
 	},
