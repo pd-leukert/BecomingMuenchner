@@ -13,8 +13,9 @@
 	const { checkResults, documentMetadata }: Props = $props();
 
 	type ProcessedCheckResult = {
+		documentTitle: string;
 		documentUrl?: string;
-		checks: Omit<CheckResult, 'type'>[];
+		checks: Omit<CheckResult, 'type' | 'documentTitle'>[];
 	};
 
 	const sortedChecks = $derived(sortChecks(checkResults, documentMetadata));
@@ -24,7 +25,7 @@
 		documentMetadata: DocumentMetadata[]
 	): Record<string, ProcessedCheckResult> {
 		const intermediateRes = checkResults.reduce(
-			(acc, { type, ...rest }) => {
+			(acc, { type, documentTitle, ...rest }) => {
 				if (type === undefined) {
 					return acc;
 				}
@@ -32,6 +33,7 @@
 					acc[type].checks.push(rest);
 				} else {
 					acc[type] = {
+						documentTitle,
 						checks: [rest]
 					};
 				}
@@ -53,7 +55,7 @@
 		);
 	}
 
-	function computeAllFine(documentResults: Omit<CheckResult, 'documentTitle'>[]) {
+	function computeAllFine(documentResults: Omit<CheckResult, 'type' | 'documentTitle'>[]) {
 		return documentResults.every(({ status }) => status === 'PASS');
 	}
 
@@ -61,10 +63,10 @@
 </script>
 
 <Accordion multiple={true} collapsible={true} class="gap-4">
-	{#each Object.entries(sortedChecks) as [documentTitle, { checks, documentUrl }] (documentTitle)}
+	{#each Object.entries(sortedChecks) as [documentType, { documentTitle, checks, documentUrl }] (documentType)}
 		{@const allFine = computeAllFine(checks)}
 		{@const { tailwindString, Icon } = parseStatus(allFine ? 'PASS' : 'FAIL')}
-		<Accordion.Item value={documentTitle}>
+		<Accordion.Item value={documentType}>
 			<h3>
 				<Accordion.ItemTrigger
 					class="font-bold m-0 h3 flex items-center gap-2 preset-tonal-{tailwindString} py-4"
